@@ -45,48 +45,64 @@ export function clearRefreshCookie(res: any) {
   });
 }
 
+const allowedRoles = ["manager", "admin", "mukhtar"];
+
 export const register = async (req: Request, res: Response) => {
-  const { email, password, role } = req.body;
-  if (!email || !password || !role)
-    return res.status(400).json({ error: "Missing fields" });
-  const allowed = ["admin", "Director", "head_of_neighborhood"];
-  if (!allowed.includes(role))
-    return res.status(400).json({ error: "Invalid role" });
-  const passwordHash = await hashPassword(password);
-  const user = await prisma.user.create({
-    data: { email, passwordHash, role },
-  });
-  res.json({ id: user.id, email: user.email, role: user.role });
+  try {
+    const { email, password, role } = req.body;
+    if (!email || !password || !role)
+      return res.status(400).json({ error: "Missing fields" });
+
+    if (!allowedRoles.includes(role))
+      return res.status(400).json({ error: "Invalid role" });
+
+    const passwordHash = await hashPassword(password);
+    const user = await prisma.user.create({
+      data: { email, passwordHash, role, is_active: true },
+    });
+    res.status(201).json({ id: user.id, email: user.email, role: user.role });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ error: "Missing credentials" });
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return res.status(401).json({ error: "Invalid credentials" });
-  const ok = await verifyPassword(password, user.passwordHash);
-  if (!ok) return res.status(401).json({ error: "Invalid credentials" });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ error: "Missing credentials" });
 
-  const accessToken = signAccessToken(
-    { sub: user.id, role: user.role, email: user.email },
-    ACCESS_SECRET,
-    ACCESS_EXPIRES,
-  );
-  const refreshToken = signRefreshToken(
-    { sub: user.id },
-    REFRESH_SECRET,
-    `${REFRESH_DAYS}d`,
-  );
-  const expiresAt = makeExpiryDate(REFRESH_DAYS);
-  await createRefreshToken(user.id, refreshToken, expiresAt);
-  setRefreshCookie(res, refreshToken);
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !user.is_active)
+      return res
+        .status(401)
+        .json({ error: "Invalid credentials or inactive user" });
 
-  res.json({
-    accessToken,
-    expiresIn: ACCESS_EXPIRES,
-    user: { id: user.id, email: user.email, role: user.role },
-  });
+    const ok = await verifyPassword(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: "Invalid credentials" });
+
+    const accessToken = signAccessToken(
+      { sub: user.id, role: user.role, email: user.email },
+      ACCESS_SECRET,
+      ACCESS_EXPIRES,
+    );
+    const refreshToken = signRefreshToken(
+      { sub: user.id },
+      REFRESH_SECRET,
+      `${REFRESH_DAYS}d`,
+    );
+    const expiresAt = makeExpiryDate(REFRESH_DAYS);
+    await createRefreshToken(user.id, refreshToken, expiresAt);
+    setRefreshCookie(res, refreshToken);
+
+    res.json({
+      accessToken,
+      expiresIn: ACCESS_EXPIRES,
+      user: { id: user.id, email: user.email, role: user.role },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export const refresh = async (req: Request, res: Response) => {
@@ -102,7 +118,8 @@ export const refresh = async (req: Request, res: Response) => {
     if (!rt) return res.status(401).json({ error: "Invalid refresh token" });
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return res.status(401).json({ error: "Invalid" });
+    if (!user || !user.is_active)
+      return res.status(401).json({ error: "Invalid or inactive user" });
 
     await revokeRefreshToken(user.id, token);
 
