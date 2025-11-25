@@ -6,42 +6,61 @@ datasource db {
   provider = "postgresql"
 }
 
+// System users with roles: manager (superuser), admin, mukhtar
 model User {
-  id            String         @id @default(uuid())
-  name          String
-  email         String         @unique
-  passwordHash  String
-  role          Role
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  refreshTokens RefreshToken[]
-  is_active     Boolean
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         Role
+  is_active    Boolean
 
-  mukhtarAssignmentsAssignedMukhtar mukhtar_assignments[] @relation("MukhtarAssignmentsMukhtar")
-  mukhtarAssignmentsAssignedBy      mukhtar_assignments[] @relation("MukhtarAssignmentsAssignedBy")
-  complaintsInitial                 complaints[]          @relation("MukhtarInitial")
-  complaintTimelineActions          complaint_timeline[]
-  announcementsCreated              announcements[]
-  achievementsCreated               achievements[]
+  complaintsHandled complaints[] @relation("MukhtarInitial") // complaints accepted by this mukhtar
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  refreshTokens RefreshToken[]
 }
 
+// Refresh tokens for user sessions
 model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
   userId    String
   revoked   Boolean  @default(false)
-  jti       String   @unique
-  createdAt DateTime @default(now())
   expiresAt DateTime
   user      User     @relation(fields: [userId], references: [id])
 }
 
+// Enumeration of roles in the system
 enum Role {
-  manager // super user:
+  manager // superuser role
   admin
   mukhtar
 }
 
+// Complaints submitted by website users (no account needed)
+model complaints {
+  id                BigInt   @id @default(autoincrement())
+  submitterName     String?  // Name of submitter, no account needed
+  contactNumber     String
+  description       String?
+  location          String?
+  neighborhoodId    Int?
+  complaintTypeId   Int?
+  complaintStatusId Int?     // status like accepted/refused/pending
+  mukhtarInitialId  String?  // mukhtar who accepted (nullable)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
+  deletedAt         DateTime? // soft delete timestamp; null means active
+
+  neighborhood  neighborhoods?      @relation(fields: [neighborhoodId], references: [id])
+  complaintType complaint_types?    @relation(fields: [complaintTypeId], references: [id])
+  status        complaint_statuses? @relation(fields: [complaintStatusId], references: [id])
+  handler       User?               @relation("MukhtarInitial", fields: [mukhtarInitialId], references: [id])
+}
+
+// Neighborhoods for complaints categorization
 model neighborhoods {
   id         Int          @id @default(autoincrement())
   name       String       @unique
@@ -49,137 +68,17 @@ model neighborhoods {
   complaints complaints[]
 }
 
+// Complaint types: e.g. noise, sanitation, traffic
 model complaint_types {
   id         Int          @id @default(autoincrement())
   name       String       @unique
   complaints complaints[]
 }
 
+// Statuses: e.g. pending, accepted, refused
 model complaint_statuses {
-  id                Int                  @id @default(autoincrement())
-  code              String               @unique
-  label             String
-  sortOrder         Int                  @default(100) // TODO: ask ai
-  complaints        complaints[]
-  complaintTimeline complaint_timeline[]
-}
-
-model complaints {
-  id                     BigInt   @id @default(autoincrement())
-  trackingCode           String?  @unique
-  neighborhoodId         Int?
-  complaintTypeId        Int?
-  complaintStatusId      Int?
-  mukhtarInitialId       String? // FK to User.id (mukhtar)
-  description            String?
-  canUserProvideSolution Boolean  @default(false)
-  contactNumber          String
-  submitterName          String?
-  location               String?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @default(now())
-
-  neighborhood    neighborhoods?      @relation(fields: [neighborhoodId], references: [id])
-  complaintType   complaint_types?    @relation(fields: [complaintTypeId], references: [id])
-  complaintStatus complaint_statuses? @relation(fields: [complaintStatusId], references: [id])
-  mukhtarInitial  User?               @relation("MukhtarInitial", fields: [mukhtarInitialId], references: [id])
-
-  complaintAttachments complaint_attachments[]
-  complaintTimeline    complaint_timeline[]
-  mukhtarAssignments   mukhtar_assignments[]
-  achievements         achievements[]
-  notificationsLog     notifications_log[]
-}
-
-model complaint_attachments {
-  id          BigInt   @id @default(autoincrement())
-  complaintId BigInt
-  filePath    String
-  fileType    String?
-  caption     String?
-  createdAt   DateTime @default(now())
-
-  complaint complaints @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-
-  achievements       achievements[]
-  beforeAchievements achievements[] @relation("BeforeAttachment")
-  afterAchievements  achievements[] @relation("AfterAttachment")
-}
-
-model complaint_timeline {
-  id          BigInt   @id @default(autoincrement())
-  complaintId BigInt
-  actorId     String? // FK to User.id
-  statusId    Int?
-  note        String?
-  metadata    Json?
-  createdAt   DateTime @default(now())
-
-  complaint complaints          @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-  actor     User?               @relation(fields: [actorId], references: [id])
-  status    complaint_statuses? @relation(fields: [statusId], references: [id])
-}
-
-model mukhtar_assignments {
-  id           BigInt   @id @default(autoincrement())
-  complaintId  BigInt
-  mukhtarId    String?
-  assignedById String?
-  assignedAt   DateTime @default(now())
-  notes        String?
-  isActive     Boolean  @default(true)
-
-  complaint  complaints @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-  mukhtar    User?      @relation("MukhtarAssignmentsMukhtar", fields: [mukhtarId], references: [id])
-  assignedBy User?      @relation("MukhtarAssignmentsAssignedBy", fields: [assignedById], references: [id])
-}
-
-model announcements {
-  id          BigInt    @id @default(autoincrement())
-  title       String
-  body        String
-  startAt     DateTime?
-  endAt       DateTime?
-  createdById String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
-
-  creator User? @relation(fields: [createdById], references: [id])
-}
-
-model achievements {
-  id                 BigInt   @id @default(autoincrement())
-  complaintId        BigInt?
-  title              String?
-  description        String?
-  beforeAttachmentId BigInt? //TODO: check
-  afterAttachmentId  BigInt? //TODO: check
-  createdById        String?
-  createdAt          DateTime @default(now())
-
-  complaint        complaints?            @relation(fields: [complaintId], references: [id])
-  beforeAttachment complaint_attachments? @relation("BeforeAttachment", fields: [beforeAttachmentId], references: [id])
-  afterAttachment  complaint_attachments? @relation("AfterAttachment", fields: [afterAttachmentId], references: [id])
-  creator          User?                  @relation(fields: [createdById], references: [id])
-
-  complaintAttachments complaint_attachments[]
-}
-
-model notifications_log {
-  id               BigInt   @id @default(autoincrement())
-  complaintId      BigInt?
-  toNumber         String?
-  channel          String?
-  message          String?
-  providerResponse Json?
-  sentAt           DateTime @default(now())
-  status           String?
-
-  complaint complaints? @relation(fields: [complaintId], references: [id])
-}
-
-model system_settings {
-  keyName   String   @id
-  value     String?
-  updatedAt DateTime @default(now())
+  id          Int          @id @default(autoincrement())
+  code        String       @unique
+  label       String
+  complaints  complaints[]
 }
