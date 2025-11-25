@@ -43,19 +43,16 @@ enum Role {
 }
 
 model neighborhoods {
-  id          Int          @id @default(autoincrement())
-  name        String       @unique
-  description String? //TODO: remove desc
-  createdAt   DateTime     @default(now())
-  complaints  complaints[]
+  id         Int          @id @default(autoincrement())
+  name       String       @unique
+  createdAt  DateTime     @default(now())
+  complaints complaints[]
 }
 
 model complaint_types {
-  id          Int          @id @default(autoincrement())
-  name        String       @unique
-  description String? //TODO: remove desc
-  isActive    Boolean      @default(true) //TODO: rm isActive
-  complaints  complaints[]
+  id         Int          @id @default(autoincrement())
+  name       String       @unique
+  complaints complaints[]
 }
 
 model complaint_statuses {
@@ -78,9 +75,7 @@ model complaints {
   canUserProvideSolution Boolean  @default(false)
   contactNumber          String
   submitterName          String?
-  latitude               Decimal? @db.Decimal(9, 6) // TODO: rm
-  longitude              Decimal? @db.Decimal(9, 6) // TODO: rm
-  addressText            String? //TODO: rename to location
+  location               String?
   createdAt              DateTime @default(now())
   updatedAt              DateTime @default(now())
 
@@ -143,7 +138,6 @@ model announcements {
   id          BigInt    @id @default(autoincrement())
   title       String
   body        String
-  isPublic    Boolean   @default(true) //TODO: rm
   startAt     DateTime?
   endAt       DateTime?
   createdById String?
