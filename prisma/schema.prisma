@@ -8,17 +8,17 @@ datasource db {
 
 // System users with roles: manager (superuser), admin, mukhtar
 model User {
-  id           String     @id @default(uuid())
+  id           String  @id @default(uuid())
   name         String
-  email        String     @unique
+  email        String  @unique
   passwordHash String
   role         Role
   is_active    Boolean
 
   complaintsHandled complaints[] @relation("MukhtarInitial") // complaints accepted by this mukhtar
 
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
 }
 
@@ -39,46 +39,30 @@ enum Role {
   mukhtar
 }
 
+// Enumeration of status in the system
+enum Status {
+  pending
+  accepted
+  refused
+}
+
 // Complaints submitted by website users (no account needed)
 model complaints {
-  id                BigInt   @id @default(autoincrement())
-  submitterName     String?  // Name of submitter, no account needed
+  id                BigInt    @id @default(autoincrement())
+  submitterName     String? // Name of submitter, no account needed
   contactNumber     String
   description       String?
   location          String?
   neighborhoodId    Int?
   complaintTypeId   Int?
-  complaintStatusId Int?     // status like accepted/refused/pending
-  mukhtarInitialId  String?  // mukhtar who accepted (nullable)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now())
+  complaintStatusId Int? // status like accepted/refused/pending
+  mukhtarInitialId  String? // mukhtar who accepted (nullable)
+  complaint_type    String    @unique
+  neighborhood      String    @unique
+  complaint_status  Status
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now())
   deletedAt         DateTime? // soft delete timestamp; null means active
 
-  neighborhood  neighborhoods?      @relation(fields: [neighborhoodId], references: [id])
-  complaintType complaint_types?    @relation(fields: [complaintTypeId], references: [id])
-  status        complaint_statuses? @relation(fields: [complaintStatusId], references: [id])
-  handler       User?               @relation("MukhtarInitial", fields: [mukhtarInitialId], references: [id])
-}
-
-// Neighborhoods for complaints categorization
-model neighborhoods {
-  id         Int          @id @default(autoincrement())
-  name       String       @unique
-  createdAt  DateTime     @default(now())
-  complaints complaints[]
-}
-
-// Complaint types: e.g. noise, sanitation, traffic
-model complaint_types {
-  id         Int          @id @default(autoincrement())
-  name       String       @unique
-  complaints complaints[]
-}
-
-// Statuses: e.g. pending, accepted, refused
-model complaint_statuses {
-  id          Int          @id @default(autoincrement())
-  code        String       @unique
-  label       String
-  complaints  complaints[]
+  handler User? @relation("MukhtarInitial", fields: [mukhtarInitialId], references: [id])
 }
