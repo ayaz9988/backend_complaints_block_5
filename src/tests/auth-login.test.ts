@@ -20,7 +20,13 @@ const app = createServer();
 
 describe("POST /v1/auth/login", () => {
   it("should login successfully with correct credentials", async () => {
-    await createTestUser("user@example.com", "password123", "admin", true);
+    await createTestUser(
+      "user@example.com",
+      "password123",
+      "admin",
+      true,
+      "User Name",
+    );
 
     const response = await request(app).post("/v1/auth/login").send({
       email: "user@example.com",
@@ -31,6 +37,7 @@ describe("POST /v1/auth/login", () => {
     expect(response.body).toHaveProperty("accessToken");
     expect(response.body).toHaveProperty("expiresIn");
     expect(response.body.user).toMatchObject({
+      name: "User Name",
       email: "user@example.com",
       role: "admin",
     });
@@ -54,7 +61,13 @@ describe("POST /v1/auth/login", () => {
   });
 
   it("should return 401 for wrong password", async () => {
-    await createTestUser("user@example.com", "correct_password", "admin", true);
+    await createTestUser(
+      "user@example.com",
+      "correct_password",
+      "admin",
+      true,
+      "User Name",
+    );
 
     const response = await request(app).post("/v1/auth/login").send({
       email: "user@example.com",
@@ -95,7 +108,13 @@ describe("POST /v1/auth/login", () => {
   });
 
   it("should never return password or password hash", async () => {
-    await createTestUser("user@example.com", "password123", "admin", true);
+    await createTestUser(
+      "user@example.com",
+      "password123",
+      "admin",
+      true,
+      "User Name",
+    );
 
     const response = await request(app).post("/v1/auth/login").send({
       email: "user@example.com",
@@ -111,7 +130,13 @@ describe("POST /v1/auth/login", () => {
 
   it("should return 401 for inactive user", async () => {
     // Create user with is_active false
-    await createTestUser("inactive@example.com", "password123", "admin", false);
+    await createTestUser(
+      "inactive@example.com",
+      "password123",
+      "admin",
+      false,
+      "Inactive User",
+    );
 
     const response = await request(app).post("/v1/auth/login").send({
       email: "inactive@example.com",

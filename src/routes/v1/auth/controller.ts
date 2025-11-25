@@ -49,8 +49,8 @@ const allowedRoles = ["manager", "admin", "mukhtar"];
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, role } = req.body;
-    if (!email || !password || !role)
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password || !role)
       return res.status(400).json({ error: "Missing fields" });
 
     if (!allowedRoles.includes(role))
@@ -58,9 +58,14 @@ export const register = async (req: Request, res: Response) => {
 
     const passwordHash = await hashPassword(password);
     const user = await prisma.user.create({
-      data: { email, passwordHash, role, is_active: true },
+      data: { name, email, passwordHash, role, is_active: true },
     });
-    res.status(201).json({ id: user.id, email: user.email, role: user.role });
+    res.status(201).json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }
@@ -82,7 +87,7 @@ export const login = async (req: Request, res: Response) => {
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });
 
     const accessToken = signAccessToken(
-      { sub: user.id, role: user.role, email: user.email },
+      { sub: user.id, name: user.name, role: user.role, email: user.email },
       ACCESS_SECRET,
       ACCESS_EXPIRES,
     );
@@ -98,7 +103,12 @@ export const login = async (req: Request, res: Response) => {
     res.json({
       accessToken,
       expiresIn: ACCESS_EXPIRES,
-      user: { id: user.id, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
@@ -139,7 +149,12 @@ export const refresh = async (req: Request, res: Response) => {
     res.json({
       accessToken,
       expiresIn: ACCESS_EXPIRES,
-      user: { id: user.id, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch {
     return res.status(401).json({ error: "Invalid token" });

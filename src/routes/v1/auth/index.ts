@@ -4,8 +4,7 @@ import { register, login, refresh, logout } from "./controller";
 
 const auth: Router = express.Router();
 
-// Register (admin only)
-auth.post("/register", requireRoles(["admin"]), register);
+auth.post("/register", requireRoles(["manager"]), register);
 
 // Login
 auth.post("/login", login);

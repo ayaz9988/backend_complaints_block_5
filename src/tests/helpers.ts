@@ -15,6 +15,7 @@ export async function createTestUser(
   password = "password123",
   role: UserRole = "admin",
   isActive = true,
+  name = "Test User",
 ) {
   const passwordHash = await hashPassword(password);
 
@@ -24,6 +25,7 @@ export async function createTestUser(
       passwordHash,
       role,
       is_active: isActive,
+      name, // Added name field here
     },
   });
 }
@@ -36,12 +38,14 @@ export async function registerUser(
   email: string,
   password: string,
   role: string,
+  name: string,
   accessToken?: string,
 ) {
   const req = request(app).post("/v1/auth/register").send({
     email,
     password,
     role,
+    name, // Added name here too
   });
 
   if (accessToken) {

@@ -7,57 +7,61 @@ import config from "../config";
 const app = createServer();
 
 describe("POST /v1/auth/register", () => {
-  it("should register a new user successfully with admin token", async () => {
-    const admin = await createTestUser(
-      "admin@example.com",
+  it("should register a new user successfully with manager token", async () => {
+    const manager = await createTestUser(
+      "manager@example.com",
       "password",
-      "admin",
+      "manager",
+      true,
+      "Manager User",
     );
 
-    const adminToken = signAccessToken(
-      { sub: admin.id, role: admin.role, email: admin.email },
+    const managerToken = signAccessToken(
+      { sub: manager.id, role: manager.role, email: manager.email },
       config.ACCESS_SECRET,
       config.ACCESS_EXPIRES,
     );
 
     const response = await request(app)
       .post("/v1/auth/register")
-      .set("Authorization", `Bearer ${adminToken}`)
+      .set("Authorization", `Bearer ${managerToken}`)
       .send({
+        name: "New User",
         email: "newuser@example.com",
         password: "SecurePass123",
-        role: "manager", // Role aligned with schema
+        role: "admin",
       });
 
-    // Should return 201 Created for new resource
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("id");
+    expect(response.body).toHaveProperty("name", "New User");
     expect(response.body.email).toBe("newuser@example.com");
-    expect(response.body.role).toBe("manager");
-
-    // Password or hash must not be returned
+    expect(response.body.role).toBe("admin");
     expect(response.body).not.toHaveProperty("password");
     expect(response.body).not.toHaveProperty("passwordHash");
   });
 
   it("should return 400 if email is missing", async () => {
-    const admin = await createTestUser(
-      "admin@example.com",
+    const manager = await createTestUser(
+      "manager@example.com",
       "password",
-      "admin",
+      "manager",
+      true,
+      "Manager User",
     );
-    const adminToken = signAccessToken(
-      { sub: admin.id, role: admin.role, email: admin.email },
+    const managerToken = signAccessToken(
+      { sub: manager.id, role: manager.role, email: manager.email },
       config.ACCESS_SECRET,
       config.ACCESS_EXPIRES,
     );
 
     const response = await request(app)
       .post("/v1/auth/register")
-      .set("Authorization", `Bearer ${adminToken}`)
+      .set("Authorization", `Bearer ${managerToken}`)
       .send({
+        name: "New User",
         password: "SecurePass123",
-        role: "manager",
+        role: "admin",
       });
 
     expect(response.status).toBe(400);
@@ -65,23 +69,26 @@ describe("POST /v1/auth/register", () => {
   });
 
   it("should return 400 if password is missing", async () => {
-    const admin = await createTestUser(
-      "admin@example.com",
+    const manager = await createTestUser(
+      "manager@example.com",
       "password",
-      "admin",
+      "manager",
+      true,
+      "Manager User",
     );
-    const adminToken = signAccessToken(
-      { sub: admin.id, role: admin.role, email: admin.email },
+    const managerToken = signAccessToken(
+      { sub: manager.id, role: manager.role, email: manager.email },
       config.ACCESS_SECRET,
       config.ACCESS_EXPIRES,
     );
 
     const response = await request(app)
       .post("/v1/auth/register")
-      .set("Authorization", `Bearer ${adminToken}`)
+      .set("Authorization", `Bearer ${managerToken}`)
       .send({
+        name: "New User",
         email: "newuser@example.com",
-        role: "manager",
+        role: "admin",
       });
 
     expect(response.status).toBe(400);
@@ -89,21 +96,24 @@ describe("POST /v1/auth/register", () => {
   });
 
   it("should return 400 if role is missing", async () => {
-    const admin = await createTestUser(
-      "admin@example.com",
+    const manager = await createTestUser(
+      "manager@example.com",
       "password",
-      "admin",
+      "manager",
+      true,
+      "Manager User",
     );
-    const adminToken = signAccessToken(
-      { sub: admin.id, role: admin.role, email: admin.email },
+    const managerToken = signAccessToken(
+      { sub: manager.id, role: manager.role, email: manager.email },
       config.ACCESS_SECRET,
       config.ACCESS_EXPIRES,
     );
 
     const response = await request(app)
       .post("/v1/auth/register")
-      .set("Authorization", `Bearer ${adminToken}`)
+      .set("Authorization", `Bearer ${managerToken}`)
       .send({
+        name: "New User",
         email: "newuser@example.com",
         password: "SecurePass123",
       });
@@ -113,21 +123,24 @@ describe("POST /v1/auth/register", () => {
   });
 
   it("should return 400 for invalid role", async () => {
-    const admin = await createTestUser(
-      "admin@example.com",
+    const manager = await createTestUser(
+      "manager@example.com",
       "password",
-      "admin",
+      "manager",
+      true,
+      "Manager User",
     );
-    const adminToken = signAccessToken(
-      { sub: admin.id, role: admin.role, email: admin.email },
+    const managerToken = signAccessToken(
+      { sub: manager.id, role: manager.role, email: manager.email },
       config.ACCESS_SECRET,
       config.ACCESS_EXPIRES,
     );
 
     const response = await request(app)
       .post("/v1/auth/register")
-      .set("Authorization", `Bearer ${adminToken}`)
+      .set("Authorization", `Bearer ${managerToken}`)
       .send({
+        name: "New User",
         email: "newuser@example.com",
         password: "SecurePass123",
         role: "invalid_role",
@@ -139,22 +152,25 @@ describe("POST /v1/auth/register", () => {
 
   it("should return 401 if no authorization token is provided", async () => {
     const response = await request(app).post("/v1/auth/register").send({
+      name: "New User",
       email: "newuser@example.com",
       password: "SecurePass123",
-      role: "manager",
+      role: "admin",
     });
 
     expect(response.status).toBe(401);
   });
 
-  it("should return 403 if user is not an admin", async () => {
-    const nonAdmin = await createTestUser(
+  it("should return 403 if user is not a manager", async () => {
+    const nonManager = await createTestUser(
       "user@example.com",
       "password",
       "mukhtar",
+      true,
+      "Non Manager User",
     );
     const token = signAccessToken(
-      { sub: nonAdmin.id, role: nonAdmin.role, email: nonAdmin.email },
+      { sub: nonManager.id, role: nonManager.role, email: nonManager.email },
       config.ACCESS_SECRET,
       config.ACCESS_EXPIRES,
     );
@@ -163,9 +179,10 @@ describe("POST /v1/auth/register", () => {
       .post("/v1/auth/register")
       .set("Authorization", `Bearer ${token}`)
       .send({
+        name: "New User",
         email: "newuser@example.com",
         password: "SecurePass123",
-        role: "manager",
+        role: "admin",
       });
 
     expect(response.status).toBe(403);
