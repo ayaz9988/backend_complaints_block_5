@@ -11,9 +11,9 @@
  */
 
 import request from "supertest";
-import { createServer } from "../server";
-import { createTestUser, loginUser, extractRefreshToken } from "./helpers";
-import prisma from "../prisma";
+import { createServer } from "../../server";
+import { createTestUser, loginUser, extractRefreshToken } from "./../helpers";
+import prisma from "../../prisma";
 
 const app = createServer();
 

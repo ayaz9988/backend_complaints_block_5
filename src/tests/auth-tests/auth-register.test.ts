@@ -1,8 +1,8 @@
 import request from "supertest";
-import { createServer } from "../server";
-import { createTestUser } from "./helpers";
-import { signAccessToken } from "../lib/jwt";
-import config from "../config";
+import { createServer } from "../../server";
+import { createTestUser } from "./../helpers";
+import { signAccessToken } from "../../lib/jwt";
+import config from "../../config";
 
 const app = createServer();
 

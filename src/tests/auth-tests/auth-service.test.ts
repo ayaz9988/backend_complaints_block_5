@@ -13,11 +13,11 @@ import {
   findValidRefreshToken,
   revokeRefreshToken,
   makeExpiryDate,
-} from "../services/auth";
-import { createTestUser } from "./helpers";
-import prisma from "../prisma";
+} from "../../services/auth";
+import { createTestUser } from "../helpers";
+import prisma from "../../prisma";
 import { add, sub } from "date-fns";
-import { signRefreshToken } from "../lib/jwt";
+import { signRefreshToken } from "../../lib/jwt";
 
 // Import dotenv config once to load environment variables for tests
 import "dotenv/config";

@@ -13,8 +13,8 @@
  */
 
 import request from "supertest";
-import { createServer } from "../server";
-import { createTestUser } from "./helpers";
+import { createServer } from "../../server";
+import { createTestUser } from "./../helpers";
 
 const app = createServer();
 

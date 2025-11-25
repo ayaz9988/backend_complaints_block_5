@@ -12,12 +12,12 @@
  */
 
 import request from "supertest";
-import { createServer } from "../server";
-import { createTestUser, loginUser, extractRefreshToken } from "./helpers";
-import prisma from "../prisma";
-import { signRefreshToken } from "../lib/jwt";
-import config from "../config";
-import { createRefreshToken, makeExpiryDate } from "../services/auth";
+import { createServer } from "../../server";
+import { createTestUser, loginUser, extractRefreshToken } from "./../helpers";
+import prisma from "../../prisma";
+import { signRefreshToken } from "../../lib/jwt";
+import config from "../../config";
+import { createRefreshToken, makeExpiryDate } from "../../services/auth";
 import { sub } from "date-fns";
 
 const app = createServer();
