@@ -16,11 +16,13 @@ beforeEach(async () => {
     // Delete dependent child records first (e.g., refresh tokens linked to users)
     await prisma.refreshToken.deleteMany({});
 
+    // Delete complaints before users since they might have foreign key relationships
+    await prisma.complaints.deleteMany({});
+
     // Then delete parent records (e.g., users)
     await prisma.user.deleteMany({});
 
     // Add other deletions if needed, doing children first then parents
-    // await prisma.complaints.deleteMany({});
   });
 });
 

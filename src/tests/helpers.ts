@@ -3,7 +3,7 @@ import request from "supertest";
 import prisma from "../prisma";
 import { hashPassword } from "../services/auth";
 
-type UserRole = "manager" | "admin" | "mukhtar";
+export type UserRole = "manager" | "admin" | "mukhtar";
 
 /**
  * Create a test user in the database

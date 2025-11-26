@@ -59,8 +59,8 @@ model complaints {
   complaintTypeId   Int?
   complaintStatusId Int? // status like accepted/refused/pending
   mukhtarInitialId  String? // mukhtar who accepted (nullable)
-  complaint_type    String    @unique
-  neighborhood      String    @unique
+  complaint_type    String    
+  neighborhood      String    
   complaint_status  Status
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @default(now())
