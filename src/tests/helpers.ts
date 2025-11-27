@@ -6,9 +6,8 @@ import { hashPassword } from "../services/auth";
 export type UserRole = "manager" | "admin" | "mukhtar";
 
 /**
- * Create a test user in the database
- *
- * Allows setting is_active status for testing active/inactive users.
+ * Create a test user directly in the database.
+ * Allows setting is_active status and neighborhood for testing.
  */
 export async function createTestUser(
   email = "test@example.com",
@@ -16,6 +15,7 @@ export async function createTestUser(
   role: UserRole = "admin",
   isActive = true,
   name = "Test User",
+  neighborhood?: string, // NEW: Optional neighborhood parameter
 ) {
   const passwordHash = await hashPassword(password);
 
@@ -25,13 +25,15 @@ export async function createTestUser(
       passwordHash,
       role,
       is_active: isActive,
-      name, // Added name field here
+      name,
+      neighborhood, // NEW: Include neighborhood in data
     },
   });
 }
 
 /**
- * Register a new user via the API
+ * Register a new user via the API.
+ * Allows setting a neighborhood for mukhtar registration.
  */
 export async function registerUser(
   app: Express,
@@ -40,13 +42,21 @@ export async function registerUser(
   role: string,
   name: string,
   accessToken?: string,
+  neighborhood?: string, // NEW: Optional neighborhood parameter
 ) {
-  const req = request(app).post("/v1/auth/register").send({
+  const requestBody: any = {
     email,
     password,
     role,
-    name, // Added name here too
-  });
+    name,
+  };
+
+  // Only add neighborhood to the body if it's provided
+  if (neighborhood) {
+    requestBody.neighborhood = neighborhood;
+  }
+
+  const req = request(app).post("/v1/auth/register").send(requestBody);
 
   if (accessToken) {
     req.set("Authorization", `Bearer ${accessToken}`);

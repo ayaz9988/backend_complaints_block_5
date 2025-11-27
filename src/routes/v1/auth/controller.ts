@@ -1,3 +1,5 @@
+// auth/controller.ts
+
 import config from "../../../config";
 import {
   signAccessToken,
@@ -49,22 +51,38 @@ const allowedRoles = ["manager", "admin", "mukhtar"];
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, neighborhood } = req.body;
     if (!name || !email || !password || !role)
       return res.status(400).json({ error: "Missing fields" });
 
     if (!allowedRoles.includes(role))
       return res.status(400).json({ error: "Invalid role" });
 
+    if (role === "mukhtar" && !neighborhood) {
+      return res
+        .status(400)
+        .json({ error: "Neighborhood is required for mukhtar role" });
+    }
+
+    const userNeighborhood = role === "mukhtar" ? neighborhood : null;
+
     const passwordHash = await hashPassword(password);
     const user = await prisma.user.create({
-      data: { name, email, passwordHash, role, is_active: true },
+      data: {
+        name,
+        email,
+        passwordHash,
+        role,
+        is_active: true,
+        neighborhood: userNeighborhood,
+      },
     });
     res.status(201).json({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
+      neighborhood: user.neighborhood,
     });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
@@ -108,6 +126,7 @@ export const login = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        neighborhood: user.neighborhood,
       },
     });
   } catch (error) {
@@ -154,6 +173,7 @@ export const refresh = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        neighborhood: user.neighborhood,
       },
     });
   } catch {
@@ -176,4 +196,36 @@ export const logout = async (req: Request, res: Response) => {
     }
   }
   return res.status(200).json({ ok: true });
+};
+
+// Get the current authenticated user's information
+export const getCurrentUser = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.sub;
+
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      // Select only the fields you want to return to the client
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        neighborhood: true,
+        is_active: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 };

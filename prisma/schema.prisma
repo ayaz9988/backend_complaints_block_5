@@ -6,6 +6,27 @@ datasource db {
   provider = "postgresql"
 }
 
+// Enumeration of roles in the system
+enum Role {
+  manager // superuser role
+  admin
+  mukhtar
+}
+
+// Enumeration of complaint priority
+enum Priority {
+  high
+  mid
+  low
+}
+
+// Enumeration of status in the system
+enum Status {
+  pending
+  accepted
+  refused
+}
+
 // System users with roles: manager (superuser), admin, mukhtar
 model User {
   id           String  @id @default(uuid())
@@ -13,7 +34,8 @@ model User {
   email        String  @unique
   passwordHash String
   role         Role
-  is_active    Boolean
+  is_active    Boolean @default(true)
+  neighborhood String? // Neighborhood assigned to a Mukhtar. Null for other roles.
 
   complaintsHandled complaints[] @relation("MukhtarInitial") // complaints accepted by this mukhtar
 
@@ -34,20 +56,6 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id])
 }
 
-// Enumeration of roles in the system
-enum Role {
-  manager // superuser role
-  admin
-  mukhtar
-}
-
-// Enumeration of status in the system
-enum Status {
-  pending
-  accepted
-  refused
-}
-
 // Complaints submitted by website users (no account needed)
 model complaints {
   id                BigInt    @id @default(autoincrement())
@@ -55,15 +63,24 @@ model complaints {
   contactNumber     String
   description       String?
   location          String?
-  neighborhoodId    Int?
-  complaintTypeId   Int?
-  complaintStatusId Int? // status like accepted/refused/pending
   mukhtarInitialId  String? // mukhtar who accepted (nullable)
   complaint_type    String    
   neighborhood      String    
-  complaint_status  Status
+  
+  // --- NEW FIELDS ---
+  priority          Priority  @default(mid) // Priority of the complaint: high, mid, low
+  trackingTag       String    @unique // Unique tag for anonymous users to track their complaint
+  estimatedReviewTime String? // Estimated time for review, e.g., "2-3 business days"
+  notes             String?    // Internal notes from manager/admin/mukhtar
+  
+  // Fields to provide more info based on status
+  solutionInfo      String?    // Details of the solution if status is 'accepted'
+  refusalReason     String?    // Reason for refusal if status is 'refused'
+  // --- END NEW FIELDS ---
+
+  complaint_status  Status    @default(pending)
   createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt // Changed to @updatedAt to automatically track changes
   deletedAt         DateTime? // soft delete timestamp; null means active
 
   handler User? @relation("MukhtarInitial", fields: [mukhtarInitialId], references: [id])

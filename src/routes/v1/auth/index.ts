@@ -1,6 +1,10 @@
+// auth/index.ts
+
 import express, { Router } from "express";
 import requireRoles from "../../../middleware/requireRoles";
-import { register, login, refresh, logout } from "./controller";
+// If you have a generic authentication middleware, you can import it here.
+// Example: import requireAuth from "../../../middleware/requireAuth";
+import { register, login, refresh, logout, getCurrentUser } from "./controller";
 
 const auth: Router = express.Router();
 
@@ -14,5 +18,12 @@ auth.post("/refresh", refresh);
 
 // Logout
 auth.post("/logout", logout);
+
+// Current user
+auth.get(
+  "/current",
+  requireRoles(["manager", "admin", "mukhtar"]),
+  getCurrentUser,
+);
 
 export default auth;
