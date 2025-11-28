@@ -16,7 +16,7 @@ export const createServer = () => {
     .use(express.urlencoded({ extended: true }))
     .use(express.json())
     .use(cors())
-    .use(cors({ origin: FRONTEND_ORIGIN, credentials: true }))
+    .use(cors({ origin: '*', credentials: true }))
     .use(cookieParser());
 
   app.get("/health", (req: Request, res: Response) => {
