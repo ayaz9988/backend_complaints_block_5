@@ -5,13 +5,13 @@ import { hashPassword } from "../services/auth";
 
 async function main() {
   try {
-    const email = "admin@example.com";
+    const email = "manager@example.com";
     const password = "ChangeMe123!";
-    const name = "System Administrator";
+    const name = "System Manager";
     const role = "manager";
     const isActive = true;
 
-    // Hash the password
+    // Hash password
     const passwordHash = await hashPassword(password);
 
     // Check if user already exists
@@ -42,12 +42,12 @@ async function main() {
           is_active: isActive
         }
       });
-      console.log(`Admin user created: ${email}`);
+      console.log(`Manager user created: ${email}`);
     }
 
-    console.log("Seeding completed successfully!");
+    console.log("Super user (manager) seeded successfully!");
   } catch (error) {
-    console.error("Error seeding admin user:", error);
+    console.error("Error seeding manager user:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
