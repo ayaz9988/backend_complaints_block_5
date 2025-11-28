@@ -31,7 +31,7 @@ export function setRefreshCookie(res: any, token: string, days = REFRESH_DAYS) {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     secure: isProd, // true in production
-    sameSite: "lax",
+    sameSite: "Strict",
     domain: isProd ? COOKIE_DOMAIN : undefined,
     maxAge,
   });
@@ -42,7 +42,7 @@ export function clearRefreshCookie(res: any) {
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
     secure: isProd,
-    sameSite: "lax",
+    sameSite: "Strict",
     domain: isProd ? COOKIE_DOMAIN : undefined,
   });
 }
