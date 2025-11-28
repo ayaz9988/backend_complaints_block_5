@@ -36,6 +36,7 @@ export async function listComplaints(req: Request, res: Response) {
   try {
     const userRole = req.user?.role;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {};
 
     if (userRole === "manager") {
@@ -147,12 +148,9 @@ export async function acceptComplaint(req: Request, res: Response) {
     }
 
     // Prevent reverting a complaint back to 'pending'
-    if (
-      currentComplaint.complaint_status !== "pending"
-    ) {
+    if (currentComplaint.complaint_status !== "pending") {
       return res.status(400).json({
-        error:
-          "Cannot accept a complaint that is not in 'pending' status.",
+        error: "Cannot accept a complaint that is not in 'pending' status.",
       });
     }
 
@@ -194,12 +192,9 @@ export async function refuseComplaint(req: Request, res: Response) {
     }
 
     // Prevent reverting a complaint back to 'pending'
-    if (
-      currentComplaint.complaint_status !== "pending"
-    ) {
+    if (currentComplaint.complaint_status !== "pending") {
       return res.status(400).json({
-        error:
-          "Cannot refuse a complaint that is not in 'pending' status.",
+        error: "Cannot refuse a complaint that is not in 'pending' status.",
       });
     }
 
@@ -221,11 +216,7 @@ export async function refuseComplaint(req: Request, res: Response) {
 // UPDATED: Simplified update function for non-status changes
 export async function updateComplaint(req: Request, res: Response) {
   const { id } = req.params;
-  const {
-    priority,
-    notes,
-    estimatedReviewTime,
-  } = req.body;
+  const { priority, notes, estimatedReviewTime } = req.body;
 
   try {
     const currentComplaint = await prisma.complaints.findUnique({
@@ -236,12 +227,14 @@ export async function updateComplaint(req: Request, res: Response) {
       return res.status(404).json({ error: "Complaint not found" });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {};
 
     // Update other fields if they are provided in the request
     if (priority) updateData.priority = priority;
     if (notes) updateData.notes = notes;
-    if (estimatedReviewTime) updateData.estimatedReviewTime = estimatedReviewTime;
+    if (estimatedReviewTime)
+      updateData.estimatedReviewTime = estimatedReviewTime;
 
     const updatedComplaint = await prisma.complaints.update({
       where: { id: BigInt(id) },

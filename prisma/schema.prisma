@@ -27,6 +27,12 @@ enum Status {
   refused
 }
 
+// Enumeration for announcement/achievement status
+enum ContentStatus {
+  active
+  inactive
+}
+
 // System users with roles: manager (superuser), admin, mukhtar
 model User {
   id           String  @id @default(uuid())
@@ -38,6 +44,8 @@ model User {
   neighborhood String? // Neighborhood assigned to a Mukhtar. Null for other roles.
 
   complaintsHandled complaints[] @relation("MukhtarInitial") // complaints accepted by this mukhtar
+  announcements    Announcement[] // announcements created by this user
+  achievements     Achievement[] // achievements created by this user
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -85,4 +93,33 @@ model complaints {
   deletedAt         DateTime? // soft delete timestamp; null means active
 
   handler User? @relation("MukhtarInitial", fields: [mukhtarInitialId], references: [id])
+}
+
+// Announcements created by managers and admins, visible to all users
+model Announcement {
+  id        String       @id @default(uuid())
+  title     String
+  content   String
+  status    ContentStatus @default(active) // Controls visibility
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  
+  // Foreign key to track which manager/admin created this announcement
+  createdBy String
+  creator   User         @relation(fields: [createdBy], references: [id])
+}
+
+// Achievements created by managers and admins, visible to all users
+model Achievement {
+  id          String       @id @default(uuid())
+  title       String
+  description String
+  iconUrl     String?      // Optional URL to an icon or image
+  status      ContentStatus @default(active) // Controls visibility
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Foreign key to track which manager/admin created this achievement
+  createdBy   String
+  creator     User         @relation(fields: [createdBy], references: [id])
 }

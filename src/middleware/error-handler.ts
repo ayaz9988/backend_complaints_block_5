@@ -7,8 +7,8 @@ export default function errorHandler(
   error: unknown,
   req: Request,
   res: Response,
-  // eslint-disable-next-line prettier/prettier
-  next: NextFunction
+
+  next: NextFunction,
 ) {
   if (res.headersSent || config.debug) {
     next(error);

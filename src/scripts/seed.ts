@@ -16,7 +16,7 @@ async function main() {
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (existingUser) {
@@ -27,8 +27,8 @@ async function main() {
           passwordHash,
           role,
           name,
-          is_active: isActive
-        }
+          is_active: isActive,
+        },
       });
       console.log(`Manager user updated: ${email}`);
     } else {
@@ -39,8 +39,8 @@ async function main() {
           passwordHash,
           role,
           name,
-          is_active: isActive
-        }
+          is_active: isActive,
+        },
       });
       console.log(`Manager user created: ${email}`);
     }

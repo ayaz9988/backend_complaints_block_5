@@ -15,6 +15,8 @@ beforeEach(async () => {
   await prisma.$transaction(async (prisma) => {
     // Delete dependent child records first (e.g., refresh tokens linked to users)
     await prisma.refreshToken.deleteMany({});
+    await prisma.announcement.deleteMany({});
+    await prisma.achievement.deleteMany({});
 
     // Delete complaints before users since they might have foreign key relationships
     await prisma.complaints.deleteMany({});

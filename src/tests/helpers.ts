@@ -44,6 +44,7 @@ export async function registerUser(
   accessToken?: string,
   neighborhood?: string, // NEW: Optional neighborhood parameter
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const requestBody: any = {
     email,
     password,

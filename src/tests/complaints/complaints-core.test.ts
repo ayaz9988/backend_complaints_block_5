@@ -16,14 +16,37 @@ describe("Complaints API", () => {
 
   beforeAll(async () => {
     // Create test users for each role
-    const adminUser = await createTestUser("admin@test.com", "password123", "admin");
-    const managerUser = await createTestUser("manager@test.com", "password123", "manager");
-    const mukhtarUser = await createTestUser("mukhtar@test.com", "password123", "mukhtar", true, "Test Mukhtar", "Test Neighborhood");
+    const adminUser = await createTestUser(
+      "admin@test.com",
+      "password123",
+      "admin",
+    );
+    const managerUser = await createTestUser(
+      "manager@test.com",
+      "password123",
+      "manager",
+    );
+    const mukhtarUser = await createTestUser(
+      "mukhtar@test.com",
+      "password123",
+      "mukhtar",
+      true,
+      "Test Mukhtar",
+      "Test Neighborhood",
+    );
 
     // Login to get tokens
     const adminLogin = await loginUser(app, "admin@test.com", "password123");
-    const managerLogin = await loginUser(app, "manager@test.com", "password123");
-    const mukhtarLogin = await loginUser(app, "mukhtar@test.com", "password123");
+    const managerLogin = await loginUser(
+      app,
+      "manager@test.com",
+      "password123",
+    );
+    const mukhtarLogin = await loginUser(
+      app,
+      "mukhtar@test.com",
+      "password123",
+    );
 
     adminToken = adminLogin.body.accessToken;
     managerToken = managerLogin.body.accessToken;
@@ -70,7 +93,10 @@ describe("Complaints API", () => {
 
       expect(response.body).toHaveProperty("id");
       expect(response.body).toHaveProperty("trackingTag");
-      expect(response.body).toHaveProperty("estimatedReviewTime", "1-2 business days");
+      expect(response.body).toHaveProperty(
+        "estimatedReviewTime",
+        "1-2 business days",
+      );
       expect(response.body.submitterName).toBe(complaintData.submitterName);
       expect(response.body.complaint_status).toBe("pending");
     });
@@ -103,7 +129,8 @@ describe("Complaints API", () => {
         neighborhood: "Westside",
         complaint_type: "infrastructure",
         priority: "high",
-        suggestedSolution: "The city should fill the pothole with asphalt and place a warning sign until it's fixed.",
+        suggestedSolution:
+          "The city should fill the pothole with asphalt and place a warning sign until it's fixed.",
       };
 
       const response = await request(app)
@@ -113,10 +140,15 @@ describe("Complaints API", () => {
 
       expect(response.body).toHaveProperty("id");
       expect(response.body).toHaveProperty("trackingTag");
-      expect(response.body).toHaveProperty("estimatedReviewTime", "1-2 business days");
+      expect(response.body).toHaveProperty(
+        "estimatedReviewTime",
+        "1-2 business days",
+      );
       expect(response.body.submitterName).toBe(complaintData.submitterName);
       expect(response.body.complaint_status).toBe("pending");
-      expect(response.body.suggestedSolution).toBe(complaintData.suggestedSolution);
+      expect(response.body.suggestedSolution).toBe(
+        complaintData.suggestedSolution,
+      );
     });
 
     it("should create a complaint without a suggested solution", async () => {
@@ -138,7 +170,10 @@ describe("Complaints API", () => {
 
       expect(response.body).toHaveProperty("id");
       expect(response.body).toHaveProperty("trackingTag");
-      expect(response.body).toHaveProperty("estimatedReviewTime", "3-5 business days");
+      expect(response.body).toHaveProperty(
+        "estimatedReviewTime",
+        "3-5 business days",
+      );
       expect(response.body.submitterName).toBe(complaintData.submitterName);
       expect(response.body.complaint_status).toBe("pending");
       expect(response.body.suggestedSolution).toBeNull();
@@ -214,7 +249,10 @@ describe("Complaints API", () => {
 
       expect(response.body.length).toBeGreaterThan(0);
       // Manager should only see high priority complaints
-      expect(response.body.every((complaint: any) => complaint.priority === "high")).toBe(true);
+      expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        response.body.every((complaint: any) => complaint.priority === "high"),
+      ).toBe(true);
     });
 
     it("should return mid priority complaints for admin", async () => {
@@ -224,7 +262,10 @@ describe("Complaints API", () => {
         .expect(200);
 
       // Admin should only see mid priority complaints
-      expect(response.body.every((complaint: any) => complaint.priority === "mid")).toBe(true);
+      expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        response.body.every((complaint: any) => complaint.priority === "mid"),
+      ).toBe(true);
     });
 
     it("should return low priority complaints for mukhtar", async () => {
@@ -234,7 +275,10 @@ describe("Complaints API", () => {
         .expect(200);
 
       // Mukhtar should only see low priority complaints
-      expect(response.body.every((complaint: any) => complaint.priority === "low")).toBe(true);
+      expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        response.body.every((complaint: any) => complaint.priority === "low"),
+      ).toBe(true);
     });
   });
 
@@ -439,7 +483,9 @@ describe("Complaints API", () => {
         .send(updateData)
         .expect(200);
 
-      expect(response.body.estimatedReviewTime).toBe(updateData.estimatedReviewTime);
+      expect(response.body.estimatedReviewTime).toBe(
+        updateData.estimatedReviewTime,
+      );
     });
   });
 
