@@ -4,14 +4,55 @@ import prisma from "../prisma";
 import { hashPassword } from "../services/auth";
 
 async function main() {
-  const email = "admin@example.com";
-  const pw = "ChangeMe123!";
-  const hashed = await hashPassword(pw);
-  await prisma.user.upsert({
-    where: { email },
-    update: { passwordHash: hashed, role: "admin" },
-    create: { email, passwordHash: hashed, role: "admin" },
-  });
-  console.log("Admin seeded:", email);
+  try {
+    const email = "admin@example.com";
+    const password = "ChangeMe123!";
+    const name = "System Administrator";
+    const role = "manager";
+    const isActive = true;
+
+    // Hash the password
+    const passwordHash = await hashPassword(password);
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      // Update existing user
+      await prisma.user.update({
+        where: { email },
+        data: {
+          passwordHash,
+          role,
+          name,
+          is_active: isActive
+        }
+      });
+      console.log(`Manager user updated: ${email}`);
+    } else {
+      // Create new user
+      await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          role,
+          name,
+          is_active: isActive
+        }
+      });
+      console.log(`Admin user created: ${email}`);
+    }
+
+    console.log("Seeding completed successfully!");
+  } catch (error) {
+    console.error("Error seeding admin user:", error);
+    process.exit(1);
+  } finally {
+    await prisma.$disconnect();
+    process.exit();
+  }
 }
-main().finally(() => process.exit());
+
+main();

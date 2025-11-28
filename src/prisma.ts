@@ -13,3 +13,4 @@ const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 export default prisma;
+
