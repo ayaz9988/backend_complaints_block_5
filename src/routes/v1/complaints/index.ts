@@ -5,7 +5,9 @@ import {
   createComplaint,
   deleteComplaint,
   updateComplaint,
-  trackComplaint, // Import the new controller function
+  trackComplaint,
+  acceptComplaint, // Import the new controller function
+  refuseComplaint, // Import the new controller function
 } from "./controller";
 import requireRoles from "../../../middleware/requireRoles";
 
@@ -31,7 +33,21 @@ complaints.get(
   getComplaint,
 );
 
-// Manager, Admin, and Mukhtar can update complaints
+// NEW: Accept a complaint with solution info
+complaints.patch(
+  "/:id/accept",
+  requireRoles(["manager", "admin", "mukhtar"]),
+  acceptComplaint,
+);
+
+// NEW: Refuse a complaint with refusal reason
+complaints.patch(
+  "/:id/refuse",
+  requireRoles(["manager", "admin", "mukhtar"]),
+  refuseComplaint,
+);
+
+// Manager, Admin, and Mukhtar can update complaints (but not status)
 complaints.patch(
   "/:id",
   requireRoles(["manager", "admin", "mukhtar"]),

@@ -76,7 +76,6 @@ model complaints {
   // Fields to provide more info based on status
   solutionInfo      String?    // Details of the solution if status is 'accepted'
   refusalReason     String?    // Reason for refusal if status is 'refused'
-  suggestedSolution String?    // Optional solution suggested by the submitter
   // --- END NEW FIELDS ---
 
   complaint_status  Status    @default(pending)

@@ -78,7 +78,7 @@ export async function getComplaint(req: Request, res: Response) {
   }
 }
 
-// UPDATED: Add trackingTag, priority, and estimated time on creation
+// UPDATED: Add trackingTag, priority, estimated time, and optional suggested solution on creation
 export async function createComplaint(req: Request, res: Response) {
   const {
     submitterName,
@@ -88,6 +88,7 @@ export async function createComplaint(req: Request, res: Response) {
     neighborhood,
     complaint_type,
     priority = "mid", // Default to 'mid' if not provided
+    suggestedSolution, // NEW: Optional field for user-provided solution
   } = req.body;
 
   try {
@@ -106,6 +107,7 @@ export async function createComplaint(req: Request, res: Response) {
         trackingTag,
         estimatedReviewTime,
         complaint_status: "pending", // Default status
+        suggestedSolution, // NEW: Include the optional suggested solution
       },
     });
 
@@ -122,17 +124,16 @@ export async function createComplaint(req: Request, res: Response) {
   }
 }
 
-// UPDATED: Enforces state transitions and required fields
-export async function updateComplaint(req: Request, res: Response) {
+// NEW: Accept a complaint with solution info
+export async function acceptComplaint(req: Request, res: Response) {
   const { id } = req.params;
-  const {
-    complaint_status,
-    priority,
-    notes,
-    solutionInfo,
-    refusalReason,
-    estimatedReviewTime,
-  } = req.body;
+  const { solutionInfo } = req.body;
+
+  if (!solutionInfo || solutionInfo.trim() === "") {
+    return res.status(400).json({
+      error: "Solution info is required when accepting a complaint.",
+    });
+  }
 
   try {
     // First, fetch the current complaint to check its existing status
@@ -145,53 +146,102 @@ export async function updateComplaint(req: Request, res: Response) {
       return res.status(404).json({ error: "Complaint not found" });
     }
 
-    const updateData: any = {};
-
-    // --- STATE AND FIELD VALIDATION ---
-    if (complaint_status) {
-      // Prevent reverting a complaint back to 'pending'
-      if (
-        complaint_status === "pending" &&
-        currentComplaint.complaint_status !== "pending"
-      ) {
-        return res.status(400).json({
-          error:
-            "Cannot set a complaint back to 'pending' once it has been processed.",
-        });
-      }
-
-      if (complaint_status === "accepted") {
-        // When accepting, solutionInfo is mandatory
-        if (!solutionInfo || solutionInfo.trim() === "") {
-          return res.status(400).json({
-            error: "Solution info is required when accepting a complaint.",
-          });
-        }
-        updateData.complaint_status = "accepted";
-        updateData.solutionInfo = solutionInfo;
-        updateData.refusalReason = null; // Clear any previous refusal reason
-      } else if (complaint_status === "refused") {
-        // When refusing, refusalReason is mandatory
-        if (!refusalReason || refusalReason.trim() === "") {
-          return res.status(400).json({
-            error: "Refusal reason is required when refusing a complaint.",
-          });
-        }
-        updateData.complaint_status = "refused";
-        updateData.refusalReason = refusalReason;
-        updateData.solutionInfo = null; // Clear any previous solution info
-      } else {
-        // This will only be hit if the status is 'pending' and it was already 'pending',
-        // which is a no-op for the status itself.
-        updateData.complaint_status = complaint_status;
-      }
+    // Prevent reverting a complaint back to 'pending'
+    if (
+      currentComplaint.complaint_status !== "pending"
+    ) {
+      return res.status(400).json({
+        error:
+          "Cannot accept a complaint that is not in 'pending' status.",
+      });
     }
+
+    const updatedComplaint = await prisma.complaints.update({
+      where: { id: BigInt(id) },
+      data: {
+        complaint_status: "accepted",
+        solutionInfo: solutionInfo,
+        refusalReason: null, // Clear any previous refusal reason
+      },
+    });
+
+    res.json(serializeComplaint(updatedComplaint));
+  } catch (error) {
+    res.status(500).json({ error: "Failed to accept complaint" });
+  }
+}
+
+// NEW: Refuse a complaint with refusal reason
+export async function refuseComplaint(req: Request, res: Response) {
+  const { id } = req.params;
+  const { refusalReason } = req.body;
+
+  if (!refusalReason || refusalReason.trim() === "") {
+    return res.status(400).json({
+      error: "Refusal reason is required when refusing a complaint.",
+    });
+  }
+
+  try {
+    // First, fetch the current complaint to check its existing status
+    const currentComplaint = await prisma.complaints.findUnique({
+      where: { id: BigInt(id) },
+      select: { complaint_status: true }, // We only need the current status for validation
+    });
+
+    if (!currentComplaint) {
+      return res.status(404).json({ error: "Complaint not found" });
+    }
+
+    // Prevent reverting a complaint back to 'pending'
+    if (
+      currentComplaint.complaint_status !== "pending"
+    ) {
+      return res.status(400).json({
+        error:
+          "Cannot refuse a complaint that is not in 'pending' status.",
+      });
+    }
+
+    const updatedComplaint = await prisma.complaints.update({
+      where: { id: BigInt(id) },
+      data: {
+        complaint_status: "refused",
+        refusalReason: refusalReason,
+        solutionInfo: null, // Clear any previous solution info
+      },
+    });
+
+    res.json(serializeComplaint(updatedComplaint));
+  } catch (error) {
+    res.status(500).json({ error: "Failed to refuse complaint" });
+  }
+}
+
+// UPDATED: Simplified update function for non-status changes
+export async function updateComplaint(req: Request, res: Response) {
+  const { id } = req.params;
+  const {
+    priority,
+    notes,
+    estimatedReviewTime,
+  } = req.body;
+
+  try {
+    const currentComplaint = await prisma.complaints.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    if (!currentComplaint) {
+      return res.status(404).json({ error: "Complaint not found" });
+    }
+
+    const updateData: any = {};
 
     // Update other fields if they are provided in the request
     if (priority) updateData.priority = priority;
     if (notes) updateData.notes = notes;
-    if (estimatedReviewTime)
-      updateData.estimatedReviewTime = estimatedReviewTime;
+    if (estimatedReviewTime) updateData.estimatedReviewTime = estimatedReviewTime;
 
     const updatedComplaint = await prisma.complaints.update({
       where: { id: BigInt(id) },
@@ -234,7 +284,7 @@ export async function deleteComplaint(req: Request, res: Response) {
   }
 }
 
-// NEW: Public endpoint to track a complaint by its unique tag
+// No changes needed here, logic remains the same
 export async function trackComplaint(req: Request, res: Response) {
   const { trackingTag } = req.params;
 

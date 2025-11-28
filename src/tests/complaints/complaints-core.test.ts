@@ -1,5 +1,7 @@
+// src/tests/complaints/complaints-core.test.ts
 import request from "supertest";
-import { createTestUser, loginUser, UserRole } from "./../helpers";
+import { Express } from "express";
+import { createTestUser, loginUser, UserRole } from "../helpers";
 import { createServer } from "../../server";
 import prisma from "../../prisma";
 
@@ -90,6 +92,56 @@ describe("Complaints API", () => {
 
       expect(response.body.priority).toBe("mid");
       expect(response.body.estimatedReviewTime).toBe("3-5 business days");
+    });
+
+    it("should create a complaint with a suggested solution", async () => {
+      const complaintData = {
+        submitterName: "Alice Johnson",
+        contactNumber: "5559876543",
+        description: "Pothole in the street",
+        location: "789 Oak Street",
+        neighborhood: "Westside",
+        complaint_type: "infrastructure",
+        priority: "high",
+        suggestedSolution: "The city should fill the pothole with asphalt and place a warning sign until it's fixed.",
+      };
+
+      const response = await request(app)
+        .post("/v1/complaints")
+        .send(complaintData)
+        .expect(201);
+
+      expect(response.body).toHaveProperty("id");
+      expect(response.body).toHaveProperty("trackingTag");
+      expect(response.body).toHaveProperty("estimatedReviewTime", "1-2 business days");
+      expect(response.body.submitterName).toBe(complaintData.submitterName);
+      expect(response.body.complaint_status).toBe("pending");
+      expect(response.body.suggestedSolution).toBe(complaintData.suggestedSolution);
+    });
+
+    it("should create a complaint without a suggested solution", async () => {
+      const complaintData = {
+        submitterName: "Bob Wilson",
+        contactNumber: "5551234567",
+        description: "Street light is out",
+        location: "321 Pine Avenue",
+        neighborhood: "Eastside",
+        complaint_type: "infrastructure",
+        priority: "mid",
+        // No suggestedSolution field
+      };
+
+      const response = await request(app)
+        .post("/v1/complaints")
+        .send(complaintData)
+        .expect(201);
+
+      expect(response.body).toHaveProperty("id");
+      expect(response.body).toHaveProperty("trackingTag");
+      expect(response.body).toHaveProperty("estimatedReviewTime", "3-5 business days");
+      expect(response.body.submitterName).toBe(complaintData.submitterName);
+      expect(response.body.complaint_status).toBe("pending");
+      expect(response.body.suggestedSolution).toBeNull();
     });
   });
 
@@ -205,11 +257,152 @@ describe("Complaints API", () => {
     });
   });
 
-  describe("PATCH /complaints/:id", () => {
-    it("should update complaint status to accepted with solution info", async () => {
-      const updateData = {
-        complaint_status: "accepted",
+  describe("PATCH /complaints/:id/accept", () => {
+    it("should accept a complaint with solution info", async () => {
+      const solutionData = {
         solutionInfo: "Fixed the noise issue by talking to neighbors",
+      };
+
+      const response = await request(app)
+        .patch(`/v1/complaints/${testComplaintId}/accept`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send(solutionData)
+        .expect(200);
+
+      expect(response.body.complaint_status).toBe("accepted");
+      expect(response.body.solutionInfo).toBe(solutionData.solutionInfo);
+      expect(response.body.refusalReason).toBeNull();
+    });
+
+    it("should reject accepting a complaint without solution info", async () => {
+      await request(app)
+        .patch(`/v1/complaints/${testComplaintId}/accept`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({}) // Missing solutionInfo
+        .expect(400);
+    });
+
+    it("should reject accepting a complaint that is not pending", async () => {
+      // Create a complaint that's already accepted
+      const testComplaint = await prisma.complaints.create({
+        data: {
+          submitterName: "Already Accepted",
+          contactNumber: "1234567890",
+          description: "Already accepted complaint",
+          location: "Test location",
+          neighborhood: "Test Neighborhood",
+          complaint_type: "noise",
+          priority: "mid",
+          trackingTag: "already-accepted",
+          estimatedReviewTime: "3-5 business days",
+          complaint_status: "accepted",
+          solutionInfo: "Already solved",
+        },
+      });
+
+      const complaintId = testComplaint.id.toString();
+
+      await request(app)
+        .patch(`/v1/complaints/${complaintId}/accept`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ solutionInfo: "New solution" })
+        .expect(400);
+    });
+  });
+
+  describe("PATCH /complaints/:id/refuse", () => {
+    it("should refuse a complaint with refusal reason", async () => {
+      // Create a new complaint for this test
+      const testComplaint = await prisma.complaints.create({
+        data: {
+          submitterName: "To Refuse",
+          contactNumber: "1234567890",
+          description: "To be refused",
+          location: "Test location",
+          neighborhood: "Test Neighborhood",
+          complaint_type: "noise",
+          priority: "mid",
+          trackingTag: "to-refuse",
+          estimatedReviewTime: "3-5 business days",
+          complaint_status: "pending",
+        },
+      });
+
+      const complaintId = testComplaint.id.toString();
+
+      const refusalData = {
+        refusalReason: "Complaint is outside our jurisdiction",
+      };
+
+      const response = await request(app)
+        .patch(`/v1/complaints/${complaintId}/refuse`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send(refusalData)
+        .expect(200);
+
+      expect(response.body.complaint_status).toBe("refused");
+      expect(response.body.refusalReason).toBe(refusalData.refusalReason);
+      expect(response.body.solutionInfo).toBeNull();
+    });
+
+    it("should reject refusing a complaint without refusal reason", async () => {
+      // Create a new complaint for this test
+      const testComplaint = await prisma.complaints.create({
+        data: {
+          submitterName: "To Refuse 2",
+          contactNumber: "1234567890",
+          description: "To be refused 2",
+          location: "Test location",
+          neighborhood: "Test Neighborhood",
+          complaint_type: "noise",
+          priority: "mid",
+          trackingTag: "to-refuse-2",
+          estimatedReviewTime: "3-5 business days",
+          complaint_status: "pending",
+        },
+      });
+
+      const complaintId = testComplaint.id.toString();
+
+      await request(app)
+        .patch(`/v1/complaints/${complaintId}/refuse`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({}) // Missing refusalReason
+        .expect(400);
+    });
+
+    it("should reject refusing a complaint that is not pending", async () => {
+      // Create a complaint that's already refused
+      const testComplaint = await prisma.complaints.create({
+        data: {
+          submitterName: "Already Refused",
+          contactNumber: "1234567890",
+          description: "Already refused complaint",
+          location: "Test location",
+          neighborhood: "Test Neighborhood",
+          complaint_type: "noise",
+          priority: "mid",
+          trackingTag: "already-refused",
+          estimatedReviewTime: "3-5 business days",
+          complaint_status: "refused",
+          refusalReason: "Already refused",
+        },
+      });
+
+      const complaintId = testComplaint.id.toString();
+
+      await request(app)
+        .patch(`/v1/complaints/${complaintId}/refuse`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ refusalReason: "New refusal reason" })
+        .expect(400);
+    });
+  });
+
+  describe("PATCH /complaints/:id", () => {
+    it("should update complaint priority", async () => {
+      const updateData = {
+        priority: "high",
       };
 
       const response = await request(app)
@@ -218,137 +411,35 @@ describe("Complaints API", () => {
         .send(updateData)
         .expect(200);
 
-      expect(response.body.complaint_status).toBe("accepted");
-      expect(response.body.solutionInfo).toBe(updateData.solutionInfo);
-      expect(response.body.refusalReason).toBeNull();
+      expect(response.body.priority).toBe("high");
     });
 
-    it("should update complaint status to refused with refusal reason", async () => {
-      // Create a new complaint for this test
-      const testComplaint = await prisma.complaints.create({
-        data: {
-          submitterName: "Test Submitter 2",
-          contactNumber: "1234567890",
-          description: "Test complaint description 2",
-          location: "Test location 2",
-          neighborhood: "Test Neighborhood 2",
-          complaint_type: "noise",
-          priority: "mid",
-          trackingTag: "test-tracking-tag-456",
-          estimatedReviewTime: "3-5 business days",
-          complaint_status: "pending",
-        },
-      });
-
-      const complaintId = testComplaint.id.toString();
-
+    it("should update complaint notes", async () => {
       const updateData = {
-        complaint_status: "refused",
-        refusalReason: "Complaint is outside our jurisdiction",
+        notes: "Internal notes about this complaint",
       };
 
       const response = await request(app)
-        .patch(`/v1/complaints/${complaintId}`)
+        .patch(`/v1/complaints/${testComplaintId}`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send(updateData)
         .expect(200);
 
-      expect(response.body.complaint_status).toBe("refused");
-      expect(response.body.refusalReason).toBe(updateData.refusalReason);
-      expect(response.body.solutionInfo).toBeNull();
+      expect(response.body.notes).toBe(updateData.notes);
     });
 
-    it("should reject updating status to accepted without solution info", async () => {
-      // Create a new complaint for this test
-      const testComplaint = await prisma.complaints.create({
-        data: {
-          submitterName: "Test Submitter 3",
-          contactNumber: "1234567890",
-          description: "Test complaint description 3",
-          location: "Test location 3",
-          neighborhood: "Test Neighborhood 3",
-          complaint_type: "noise",
-          priority: "mid",
-          trackingTag: "test-tracking-tag-789",
-          estimatedReviewTime: "3-5 business days",
-          complaint_status: "pending",
-        },
-      });
-
-      const complaintId = testComplaint.id.toString();
-
+    it("should update estimated review time", async () => {
       const updateData = {
-        complaint_status: "accepted",
-        // Missing solutionInfo
+        estimatedReviewTime: "2-3 business days",
       };
 
-      await request(app)
-        .patch(`/v1/complaints/${complaintId}`)
+      const response = await request(app)
+        .patch(`/v1/complaints/${testComplaintId}`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send(updateData)
-        .expect(400);
-    });
+        .expect(200);
 
-    it("should reject updating status to refused without refusal reason", async () => {
-      // Create a new complaint for this test
-      const testComplaint = await prisma.complaints.create({
-        data: {
-          submitterName: "Test Submitter 4",
-          contactNumber: "1234567890",
-          description: "Test complaint description 4",
-          location: "Test location 4",
-          neighborhood: "Test Neighborhood 4",
-          complaint_type: "noise",
-          priority: "mid",
-          trackingTag: "test-tracking-tag-101",
-          estimatedReviewTime: "3-5 business days",
-          complaint_status: "pending",
-        },
-      });
-
-      const complaintId = testComplaint.id.toString();
-
-      const updateData = {
-        complaint_status: "refused",
-        // Missing refusalReason
-      };
-
-      await request(app)
-        .patch(`/v1/complaints/${complaintId}`)
-        .set("Authorization", `Bearer ${adminToken}`)
-        .send(updateData)
-        .expect(400);
-    });
-
-    it("should prevent reverting a complaint back to pending", async () => {
-      // Create a new complaint for this test
-      const testComplaint = await prisma.complaints.create({
-        data: {
-          submitterName: "Test Submitter 5",
-          contactNumber: "1234567890",
-          description: "Test complaint description 5",
-          location: "Test location 5",
-          neighborhood: "Test Neighborhood 5",
-          complaint_type: "noise",
-          priority: "mid",
-          trackingTag: "test-tracking-tag-202",
-          estimatedReviewTime: "3-5 business days",
-          complaint_status: "accepted",
-          solutionInfo: "Test solution",
-        },
-      });
-
-      const complaintId = testComplaint.id.toString();
-
-      const updateData = {
-        complaint_status: "pending",
-      };
-
-      await request(app)
-        .patch(`/v1/complaints/${complaintId}`)
-        .set("Authorization", `Bearer ${adminToken}`)
-        .send(updateData)
-        .expect(400);
+      expect(response.body.estimatedReviewTime).toBe(updateData.estimatedReviewTime);
     });
   });
 
