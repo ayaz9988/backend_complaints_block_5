@@ -9,8 +9,9 @@ A Node.js and Express backend for managing complaints, built with TypeScript and
 -   **Language:** TypeScript
 -   **Database:** PostgreSQL
 -   **ORM:** Prisma
+-   **Testing suite:** jest && supertest
 -   **Authentication:** JWT (JSON Web Tokens)
--   
+
 ## Option 1: Docker (Recommended)
 
 The easiest way to get the application running is with Docker and Docker Compose.
@@ -50,6 +51,18 @@ FRONTEND_ORIGIN="http://localhost:3000"
 The easiest way to manage the application is with the provided helper scripts.
 
 **For Linux/macOS (Bash):**
+Make the script Executable: Open your terminal and run this command to give the script permission to execute:
+```bash
+chmod +x docker-manager.sh
+```
+Run the Script: Use the ./ prefix to run it from your terminal.
+bash
+```bash
+./docker-manager.sh start
+./docker-manager.sh test
+./docker-manager.sh help
+```
+then:
 
 ```bash
 # Build the images and start the containers
@@ -93,20 +106,6 @@ The API will be available at `http://localhost:5000`.
 To run the test suite, use the helper script:
 
 **For Linux/macOS:**
-
-Make the script Executable: Open your terminal and run this command to give the script permission to execute:
-bash
-```bash
-chmod +x docker-manager.sh
-```
-Run the Script: Use the ./ prefix to run it from your terminal.
-bash
-```bash
-./docker-manager.sh start
-./docker-manager.sh test
-./docker-manager.sh help
-```
-then:
 
 ```bash
 ./docker-manager.sh test
@@ -157,10 +156,10 @@ These commands will generate the Prisma Client (a type-safe database query build
 
 ```bash
 # Generate the Prisma Client
-npm exec prisma generate
+npx prisma generate
 
 # Run database migrations
-npm exec prisma migrate dev
+npx prisma migrate dev
 ```
 
 **Seed the Database**
