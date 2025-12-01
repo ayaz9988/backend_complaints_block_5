@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # A simple script to manage Docker Compose commands for the project.
 
