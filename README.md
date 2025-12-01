@@ -57,6 +57,13 @@ The easiest way to manage the application is with the provided helper scripts.
 
 **For Windows (PowerShell):**
 
+Set Execution Policy (if needed): If you've never run PowerShell scripts before, you may need to allow it. Open PowerShell as an Administrator and run:
+powershell
+```powershell 
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+Answer "Yes" when prompted. You only need to do this once. then:
+
 ```powershell
 # Build the images and start the containers
 .\docker-manager.ps1 build
@@ -82,6 +89,21 @@ The API will be available at `http://localhost:5000`.
 To run the test suite, use the helper script:
 
 **For Linux/macOS:**
+
+Make the script Executable: Open your terminal and run this command to give the script permission to execute:
+bash
+```bash
+chmod +x docker-manager.sh
+```
+Run the Script: Use the ./ prefix to run it from your terminal.
+bash
+```bash
+./docker-manager.sh start
+./docker-manager.sh test
+./docker-manager.sh help
+```
+then:
+
 ```bash
 ./docker-manager.sh test
 ```
