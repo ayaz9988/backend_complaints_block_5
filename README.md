@@ -10,6 +10,10 @@ A Node.js and Express backend for managing complaints, built with TypeScript and
 -   **Database:** PostgreSQL
 -   **ORM:** Prisma
 -   **Authentication:** JWT (JSON Web Tokens)
+-   
+## Option 1: Docker (Recommended)
+
+The easiest way to get the application running is with Docker and Docker Compose.
 
 ## Prerequisites
 
@@ -112,6 +116,74 @@ then:
 ```powershell
 .\docker-manager.ps1 test
 ```
+
+## Option 2: Local Development
+
+If you prefer to run the application directly on your machine without Docker.
+
+### Prerequisites
+
+-   [Node.js](https://nodejs.org/) (v20 or later)
+-   A local instance of [PostgreSQL](https://www.postgresql.org/download/)
+
+### Getting Started
+
+**Install Dependencies**
+
+```bash
+npm install
+```
+
+**Set Up Environment Variables**
+
+Create a `.env` file in the root of the project. Make sure the `DATABASE_URL` points to your local PostgreSQL database.
+
+```bash
+# .env
+
+DATABASE_URL="postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/YOUR_DB_NAME"
+JWT_ACCESS_SECRET="your-super-secret-access-key"
+JWT_REFRESH_SECRET="your-super-secret-refresh-key"
+ACCESS_EXPIRES="15m"
+REFRESH_EXPIRES_DAYS=7
+COOKIE_DOMAIN=localhost
+PORT=5000
+FRONTEND_ORIGIN="http://localhost:3000"
+```
+
+**Set Up the Database**
+
+These commands will generate the Prisma Client (a type-safe database query builder) and run the database migrations to create your tables.
+
+```bash
+# Generate the Prisma Client
+npm exec prisma generate
+
+# Run database migrations
+npm exec prisma migrate dev
+```
+
+**Seed the Database**
+
+This command will run the `seed.ts` script to create an initial admin user in your database.
+
+```bash
+npm run seed:admin
+```
+
+**Run the Development Server**
+
+```bash
+npm run dev
+```
+
+The API will be available at `http://localhost:5000`.
+
+**testing**
+```bash
+npm run test
+```
+
 
 ## API Documentation
 

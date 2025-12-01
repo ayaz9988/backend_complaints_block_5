@@ -5,20 +5,17 @@ FROM node:20-alpine
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Copy package.json and pnpm-lock.yaml to leverage Docker cache
-COPY package.json pnpm-lock.yaml ./
+COPY package.json ./
 
 # Install app dependencies using pnpm
-RUN pnpm install --frozen-lockfile
+RUN npm install --frozen-lockfile
 
 # Copy the rest of the application source code
 COPY . .
 
 # Build the application
-RUN pnpm run build
+RUN npm run build
 
 # Your app binds to port 5000, so you'll use this port mapping
 EXPOSE 5000
