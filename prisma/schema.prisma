@@ -105,8 +105,8 @@ model Announcement {
   updatedAt DateTime     @updatedAt
   
   // Foreign key to track which manager/admin created this announcement
-  createdBy String
-  creator   User         @relation(fields: [createdBy], references: [id])
+  createdBy String?
+  creator   User?        @relation(fields: [createdBy], references: [id])
 }
 
 // Achievements created by managers and admins, visible to all users
@@ -120,6 +120,6 @@ model Achievement {
   updatedAt   DateTime     @updatedAt
   
   // Foreign key to track which manager/admin created this achievement
-  createdBy   String
-  creator     User         @relation(fields: [createdBy], references: [id])
+  createdBy   String?
+  creator     User?        @relation(fields: [createdBy], references: [id])
 }

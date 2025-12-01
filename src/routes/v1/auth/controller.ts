@@ -201,11 +201,11 @@ export const logout = async (req: Request, res: Response) => {
 // Get the current authenticated user's information
 export const getCurrentUser = async (req: Request, res: Response) => {
   try {
-    const userId = req.user.sub;
-
-    if (!userId) {
+    if (!req.user || !req.user.sub) {
       return res.status(401).json({ error: "User not authenticated" });
     }
+
+    const userId = req.user.sub;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
