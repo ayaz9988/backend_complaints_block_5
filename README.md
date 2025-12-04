@@ -4,13 +4,13 @@ A Node.js and Express backend for managing complaints, built with TypeScript and
 
 ## Tech Stack
 
--   **Runtime:** Node.js
--   **Framework:** Express.js
--   **Language:** TypeScript
--   **Database:** PostgreSQL
--   **ORM:** Prisma
--   **Testing suite:** jest && supertest
--   **Authentication:** JWT (JSON Web Tokens)
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Language:** TypeScript
+- **Database:** PostgreSQL
+- **ORM:** Prisma
+- **Testing suite:** jest && supertest
+- **Authentication:** JWT (JSON Web Tokens)
 
 ## Option 1: Docker (Recommended)
 
@@ -18,8 +18,8 @@ The easiest way to get the application running is with Docker and Docker Compose
 
 ## Prerequisites
 
--   [Docker](https://www.docker.com/get-started/)
--   [Docker Compose](https://docs.docker.com/compose/install/)
+- [Docker](https://www.docker.com/get-started/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
 ## Getting Started
 
@@ -52,16 +52,20 @@ The easiest way to manage the application is with the provided helper scripts.
 
 **For Linux/macOS (Bash):**
 Make the script Executable: Open your terminal and run this command to give the script permission to execute:
+
 ```bash
 chmod +x docker-manager.sh
 ```
+
 Run the Script: Use the ./ prefix to run it from your terminal.
 bash
+
 ```bash
 ./docker-manager.sh start
 ./docker-manager.sh test
 ./docker-manager.sh help
 ```
+
 then:
 
 ```bash
@@ -76,9 +80,11 @@ then:
 
 Set Execution Policy (if needed): If you've never run PowerShell scripts before, you may need to allow it. Open PowerShell as an Administrator and run:
 powershell
-```powershell 
+
+```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
+
 Answer "Yes" when prompted. You only need to do this once. then:
 
 ```powershell
@@ -112,6 +118,7 @@ To run the test suite, use the helper script:
 ```
 
 **For Windows:**
+
 ```powershell
 .\docker-manager.ps1 test
 ```
@@ -122,8 +129,8 @@ If you prefer to run the application directly on your machine without Docker.
 
 ### Prerequisites
 
--   [Node.js](https://nodejs.org/) (v20 or later)
--   A local instance of [PostgreSQL](https://www.postgresql.org/download/)
+- [Node.js](https://nodejs.org/) (v20 or later)
+- A local instance of [PostgreSQL](https://www.postgresql.org/download/)
 
 ### Getting Started
 
@@ -179,10 +186,10 @@ npm run dev
 The API will be available at `http://localhost:5000`.
 
 **testing**
+
 ```bash
 npm run test
 ```
-
 
 ## API Documentation
 

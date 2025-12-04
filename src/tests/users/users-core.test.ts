@@ -86,6 +86,86 @@ describe("Users API", () => {
     });
   });
 
+  describe("GET /users", () => {
+    it("should return all admin and mukhtar users when requested by manager without role parameter", async () => {
+      const response = await request(app)
+        .get("/v1/users/")
+        .set("Authorization", `Bearer ${managerToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveLength(2); // admin and mukhtar
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(response.body.some((user: any) => user.role === "admin")).toBe(
+        true,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(response.body.some((user: any) => user.role === "mukhtar")).toBe(
+        true,
+      );
+    });
+
+    it("should return only admin users when requested by manager with role=admin", async () => {
+      const response = await request(app)
+        .get("/v1/users/?role=admin")
+        .set("Authorization", `Bearer ${managerToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].role).toBe("admin");
+    });
+
+    it("should return only mukhtar users when requested by manager with role=mukhtar", async () => {
+      const response = await request(app)
+        .get("/v1/users/?role=mukhtar")
+        .set("Authorization", `Bearer ${managerToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].role).toBe("mukhtar");
+    });
+
+    it("should return only mukhtar users when requested by admin", async () => {
+      const response = await request(app)
+        .get("/v1/users/")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].role).toBe("mukhtar");
+    });
+
+    it("should return only mukhtar users when requested by admin with role=admin", async () => {
+      const response = await request(app)
+        .get("/v1/users/?role=admin")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].role).toBe("mukhtar");
+    });
+
+    it("should return only mukhtar users when requested by admin with role=mukhtar", async () => {
+      const response = await request(app)
+        .get("/v1/users/?role=mukhtar")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].role).toBe("mukhtar");
+    });
+
+    it("should return 401 when requested without a token", async () => {
+      await request(app).get("/v1/users/").expect(401);
+    });
+
+    it("should return 403 when requested by mukhtar", async () => {
+      await request(app)
+        .get("/v1/users/")
+        .set("Authorization", `Bearer ${mukhtarToken}`)
+        .expect(403);
+    });
+  });
+
   describe("GET /users/:id", () => {
     it("should return user details when requested by manager", async () => {
       const response = await request(app)
@@ -129,9 +209,7 @@ describe("Users API", () => {
     });
 
     it("should return 401 when requested without a token", async () => {
-      await request(app)
-        .get(`/v1/users/${testMukhtarId}`)
-        .expect(401);
+      await request(app).get(`/v1/users/${testMukhtarId}`).expect(401);
     });
 
     it("should return 403 when requested by mukhtar", async () => {
@@ -370,9 +448,7 @@ describe("Users API", () => {
     });
 
     it("should return 401 when deleting without a token", async () => {
-      await request(app)
-        .delete(`/v1/users/${testMukhtarId}`)
-        .expect(401);
+      await request(app).delete(`/v1/users/${testMukhtarId}`).expect(401);
     });
 
     it("should return 403 when deleting by mukhtar", async () => {

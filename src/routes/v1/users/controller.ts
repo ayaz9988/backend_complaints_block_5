@@ -3,19 +3,62 @@ import prisma from "../../../prisma";
 import bcrypt from "bcryptjs";
 
 // Helper function to handle BigInt serialization for user objects
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const serializeUser = (user: any) => {
   return {
     ...user,
     id: user.id.toString(),
     // Convert complaintsHandled if it exists
-    complaintsHandled: user.complaintsHandled 
-      ? user.complaintsHandled.map((complaint: any) => ({
+    complaintsHandled: user.complaintsHandled
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        user.complaintsHandled.map((complaint: any) => ({
           ...complaint,
           id: complaint.id.toString(),
         }))
       : undefined,
   };
 };
+
+// Get users by role (for managers and admins)
+export async function getUsersByRole(req: Request, res: Response) {
+  const { role } = req.query;
+  const userRole = req.user?.role;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const whereClause: any = {};
+
+    // If the requester is an admin, they can only see mukhtar users
+    if (userRole === "admin") {
+      whereClause.role = "mukhtar";
+    }
+    // If the requester is a manager, they can filter by role
+    else if (userRole === "manager") {
+      if (role === "admin") {
+        whereClause.role = "admin";
+      } else if (role === "mukhtar") {
+        whereClause.role = "mukhtar";
+      } else {
+        // If no role is specified or role is "admin|mukhtar", return both
+        whereClause.role = {
+          in: ["admin", "mukhtar"],
+        };
+      }
+    } else {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const users = await prisma.user.findMany({
+      where: whereClause,
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json(users.map(serializeUser));
+  } catch (error) {
+    console.error("Error in getUsersByRole:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+}
 
 // Get user by ID (for managers and admins)
 export async function getUserById(req: Request, res: Response) {
@@ -70,21 +113,25 @@ export async function getUserComplaints(req: Request, res: Response) {
       const complaints = await prisma.complaints.findMany({
         where: { mukhtarInitialId: id },
       });
-      
-      return res.json(complaints.map(complaint => ({
-        ...complaint,
-        id: complaint.id.toString(),
-      })));
+
+      return res.json(
+        complaints.map((complaint) => ({
+          ...complaint,
+          id: complaint.id.toString(),
+        })),
+      );
     } else if (userRole === "admin" && user.role === "mukhtar") {
       // Admin can only view mukhtar's complaints
       const complaints = await prisma.complaints.findMany({
         where: { mukhtarInitialId: id },
       });
-      
-      return res.json(complaints.map(complaint => ({
-        ...complaint,
-        id: complaint.id.toString(),
-      })));
+
+      return res.json(
+        complaints.map((complaint) => ({
+          ...complaint,
+          id: complaint.id.toString(),
+        })),
+      );
     } else {
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -112,8 +159,9 @@ export async function updateUser(req: Request, res: Response) {
     // Check if the requester has permission to update this user
     if (userRole === "manager") {
       // Manager can update any user
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: any = {};
-      
+
       if (name) updateData.name = name;
       if (email) updateData.email = email;
       if (password) {
@@ -130,8 +178,9 @@ export async function updateUser(req: Request, res: Response) {
       return res.json(serializeUser(updatedUser));
     } else if (userRole === "admin" && user.role === "mukhtar") {
       // Admin can only update mukhtar users (without password)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: any = {};
-      
+
       if (name) updateData.name = name;
       if (email) updateData.email = email;
       if (neighborhood) updateData.neighborhood = neighborhood;
@@ -208,12 +257,12 @@ export async function deleteUser(req: Request, res: Response) {
     // Only managers can delete users
     if (userRole === "manager") {
       // First, we need to handle all foreign key constraints
-      
+
       // 1. Delete all refresh tokens for this user
       await prisma.refreshToken.deleteMany({
         where: { userId: id },
       });
-      
+
       // 2. Update any complaints handled by this user to remove the reference
       await prisma.complaints.updateMany({
         where: { mukhtarInitialId: id },
