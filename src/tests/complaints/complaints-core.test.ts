@@ -15,6 +15,25 @@ describe("Complaints API", () => {
   let testTrackingTag: string;
 
   beforeAll(async () => {
+    // First, delete any refresh tokens associated with our test users
+    await prisma.refreshToken.deleteMany({
+      where: {
+        user: {
+          email: {
+            in: ["admin@test.com", "manager@test.com", "mukhtar@test.com"],
+          },
+        },
+      },
+    });
+    // Clean up any existing test users before creating new ones
+    await prisma.user.deleteMany({
+      where: {
+        email: {
+          in: ["admin@test.com", "manager@test.com", "mukhtar@test.com"],
+        },
+      },
+    });
+
     // Create test users for each role
     const adminUser = await createTestUser(
       "admin@test.com",
@@ -54,6 +73,26 @@ describe("Complaints API", () => {
   });
 
   beforeEach(async () => {
+    // Clean up any existing test complaints before creating a new one
+    await prisma.complaints.deleteMany({
+      where: {
+        trackingTag: {
+          in: [
+            "test-tracking-tag-123",
+            "high-priority-1",
+            "mid-priority-1",
+            "low-priority-1",
+            "already-accepted",
+            "to-refuse",
+            "to-refuse-2",
+            "already-refused",
+            "to-delete-tag",
+            "to-soft-delete-tag",
+          ],
+        },
+      },
+    });
+
     // Create a test complaint for use in tests
     const testComplaint = await prisma.complaints.create({
       data: {
@@ -105,7 +144,7 @@ describe("Complaints API", () => {
       const complaintData = {
         submitterName: "Jane Smith",
         contactNumber: "5551234567",
-        description: "Water leak in the street",
+        description: "Water leak in street",
         location: "456 Oak Ave",
         neighborhood: "Uptown",
         complaint_type: "water",
@@ -124,7 +163,7 @@ describe("Complaints API", () => {
       const complaintData = {
         submitterName: "Alice Johnson",
         contactNumber: "5559876543",
-        description: "Pothole in the street",
+        description: "Pothole in street",
         location: "789 Oak Street",
         neighborhood: "Westside",
         complaint_type: "infrastructure",
