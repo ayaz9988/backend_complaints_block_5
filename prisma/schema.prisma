@@ -33,6 +33,13 @@ enum ContentStatus {
   inactive
 }
 
+// Enumeration for initiative status
+enum InitiativeStatus {
+  pending
+  approved
+  rejected
+}
+
 // System users with roles: manager (superuser), admin, mukhtar
 model User {
   id           String  @id @default(uuid())
@@ -118,8 +125,23 @@ model Achievement {
   status      ContentStatus @default(active) // Controls visibility
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  
+
   // Foreign key to track which manager/admin created this achievement
   createdBy   String?
   creator     User?        @relation(fields: [createdBy], references: [id])
+}
+
+// Initiatives submitted by public users, managed by managers and admins
+model Initiative {
+  id          BigInt          @id @default(autoincrement())
+  title       String
+  description String
+  status      InitiativeStatus @default(pending)
+  submitterName String?       // Optional name of submitter
+  contactNumber String?       // Optional contact info
+  location    String?         // Optional location
+  neighborhood String?        // Optional neighborhood
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 }

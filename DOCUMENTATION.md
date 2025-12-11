@@ -9,6 +9,7 @@ This document outlines the REST API endpoints for managing announcements, achiev
 - [Announcements Endpoints](#announcements-endpoints)
 - [Achievements Endpoints](#achievements-endpoints)
 - [Complaints Endpoints](#complaints-endpoints)
+- [Initiatives Endpoints](#initiatives-endpoints)
 - [Users Management Endpoints](#users-management-endpoints)
 - [Error Handling](#error-handling)
 - [Security Considerations](#security-considerations)
@@ -30,16 +31,16 @@ Access to protected endpoints requires a valid JSON Web Token (JWT) to be includ
 ### Token Types
 
 1. **Access Token**:
-    - Short-lived JWT token.
-    - Sent in the `Authorization` header as a `Bearer` token.
-    - Required for protected endpoints.
-    - Example: `Authorization: Bearer <access_token>`
+   - Short-lived JWT token.
+   - Sent in the `Authorization` header as a `Bearer` token.
+   - Required for protected endpoints.
+   - Example: `Authorization: Bearer <access_token>`
 
 2. **Refresh Token**:
-    - Long-lived token stored in an HTTP-only cookie.
-    - Used to obtain new access tokens.
-    - Automatically sent by the browser with requests.
-    - Not accessible via JavaScript (security measure).
+   - Long-lived token stored in an HTTP-only cookie.
+   - Used to obtain new access tokens.
+   - Automatically sent by the browser with requests.
+   - Not accessible via JavaScript (security measure).
 
 ### Authentication Flow
 
@@ -53,10 +54,10 @@ Access to protected endpoints requires a valid JSON Web Token (JWT) to be includ
 
 | Role             | Permissions                                                                                                                                                                                  |
 | :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`manager`**    | **Superuser**: Can perform all actions. Can create, read, update, and delete announcements, achievements, and users. Can view and manage all complaints.                                     |
-| **`admin`**      | Can create, read, update announcements and achievements. Can view and manage `mid` priority complaints. Can view, update (no password), and deactivate `mukhtar` users and their complaints. |
+| **`manager`**    | **Superuser**: Can perform all actions. Can create, read, update, and delete announcements, achievements, initiatives, and users. Can view and manage all complaints.                      |
+| **`admin`**      | Can create, read, update announcements, achievements, and initiatives. Can view and manage `mid` priority complaints. Can view, update (no password), and deactivate `mukhtar` users and their complaints. |
 | **`mukhtar`**    | Can only read (view) announcements and achievements. Can view and manage `low` priority complaints in their assigned neighborhood. Can soft-delete complaints.                               |
-| **Public Users** | Can only read (view) active announcements and achievements. Can submit new complaints and track them.                                                                                        |
+| **Public Users** | Can only read (view) active announcements and achievements. Can submit new complaints, initiatives, and track them.                                                                         |
 
 ---
 
@@ -396,6 +397,39 @@ Update complaint details (excluding status).
 - **Success Response (200 OK):** Returns the updated complaint object.
 - **Error Responses:** `401`, `403`, `404`, `500`.
 
+### `PATCH /v1/complaints/:id/priority`
+
+Set the priority of a complaint. Access is restricted to `admin` role only.
+
+- **Authorization:** Required (`Bearer` token with `admin` role).
+- **URL Parameters:**
+  - `id` (string, required): The ID of the complaint.
+- **Request Body (JSON):**
+
+  ```json
+  {
+    "priority": "high|mid|low (required)"
+  }
+  ```
+
+- **Success Response (200 OK):** Returns the updated complaint object with the new priority and estimated review time.
+
+  ```json
+  {
+    "id": "123",
+    "priority": "high",
+    "estimatedReviewTime": "1-2 business days",
+    // ... other complaint fields
+  }
+  ```
+
+- **Error Responses:**
+  - `400 Bad Request`: If priority is missing or invalid.
+  - `401 Unauthorized`: Authentication failed.
+  - `403 Forbidden`: User is not an admin.
+  - `404 Not Found`: Complaint not found.
+  - `500 Internal Server Error`: Server error.
+
 ### `DELETE /v1/complaints/:id`
 
 Delete a complaint.
@@ -406,6 +440,104 @@ Delete a complaint.
 - **Success Response (200 OK):**
   - **Manager**: Returns `{ "message": "Complaint permanently deleted" }`.
   - **Mukhtar**: Returns `{ "message": "Complaint soft deleted" }`.
+- **Error Responses:** `401`, `403`, `404`, `500`.
+
+---
+
+## Initiatives Endpoints
+
+### `POST /v1/initiatives`
+
+Create a new initiative (public endpoint).
+
+- **Authorization:** None (public).
+- **Request Body (JSON):**
+
+  ```json
+  {
+    "title": "string (required)",
+    "description": "string (required)",
+    "submitterName": "string (optional)",
+    "contactNumber": "string (optional)",
+    "location": "string (optional)",
+    "neighborhood": "string (optional)"
+  }
+  ```
+
+- **Success Response (201 Created):** Returns the full initiative object.
+
+  ```json
+  {
+    "id": "123",
+    "title": "Community Garden Initiative",
+    "description": "Create a community garden in the neighborhood",
+    "status": "pending",
+    "submitterName": "John Doe",
+    "contactNumber": "1234567890",
+    "location": "Central Park",
+    "neighborhood": "Downtown",
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z"
+  }
+  ```
+
+- **Error Responses:** `400`, `500`.
+
+### `GET /v1/initiatives`
+
+List all initiatives.
+
+- **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
+- **Success Response (200 OK):** Returns an array of initiative objects.
+- **Error Responses:** `401`, `403`, `500`.
+
+### `GET /v1/initiatives/:id`
+
+Get details of a specific initiative.
+
+- **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
+- **URL Parameters:**
+  - `id` (string, required): The ID of the initiative.
+- **Success Response (200 OK):** Returns the initiative object.
+- **Error Responses:** `401`, `403`, `404`, `500`.
+
+### `PATCH /v1/initiatives/:id`
+
+Update an initiative.
+
+- **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
+- **URL Parameters:**
+  - `id` (string, required): The ID of the initiative.
+- **Request Body (JSON):** Provide only the fields you want to update.
+
+  ```json
+  {
+    "title": "string (optional)",
+    "description": "string (optional)",
+    "status": "pending|approved|rejected (optional)",
+    "submitterName": "string (optional)",
+    "contactNumber": "string (optional)",
+    "location": "string (optional)",
+    "neighborhood": "string (optional)"
+  }
+  ```
+
+- **Success Response (200 OK):** Returns the updated initiative object.
+- **Error Responses:** `401`, `403`, `404`, `500`.
+
+### `DELETE /v1/initiatives/:id`
+
+Delete an initiative.
+
+- **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
+- **URL Parameters:**
+  - `id` (string, required): The ID of the initiative to delete.
+- **Success Response (200 OK):**
+
+  ```json
+  { "message": "Initiative deleted successfully" }
+  ```
+
 - **Error Responses:** `401`, `403`, `404`, `500`.
 
 ---
@@ -757,6 +889,14 @@ localStorage.setItem("accessToken", newAccessToken);
 | `pending`  | Complaint is awaiting review             |
 | `accepted` | Complaint has been accepted and resolved |
 | `refused`  | Complaint has been refused with a reason |
+
+### Initiative Status Values
+
+| Status      | Description                          |
+| ----------- | ------------------------------------ |
+| `pending`   | Initiative is awaiting review        |
+| `approved`  | Initiative has been approved         |
+| `rejected`  | Initiative has been rejected         |
 
 ### Priority Levels
 

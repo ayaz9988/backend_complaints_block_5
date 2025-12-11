@@ -162,11 +162,11 @@ FRONTEND_ORIGIN="http://localhost:3000"
 These commands will generate the Prisma Client (a type-safe database query builder) and run the database migrations to create your tables.
 
 ```bash
-# Generate the Prisma Client
-npx prisma generate
-
 # Run database migrations
 npx prisma migrate dev
+
+# Generate the Prisma Client
+npx prisma generate
 ```
 
 **Seed the Database**
