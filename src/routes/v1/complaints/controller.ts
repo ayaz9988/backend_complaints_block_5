@@ -88,14 +88,11 @@ export async function createComplaint(req: Request, res: Response) {
     location,
     neighborhood,
     complaint_type,
-    priority = "mid", // Default to 'mid' if not provided
     suggestedSolution, // NEW: Optional field for user-provided solution
   } = req.body;
 
   try {
     const trackingTag = crypto.randomUUID(); // Generate a unique tracking tag
-    const estimatedReviewTime = getEstimatedReviewTime(priority);
-
     const newComplaint = await prisma.complaints.create({
       data: {
         submitterName,
@@ -104,9 +101,7 @@ export async function createComplaint(req: Request, res: Response) {
         location,
         neighborhood,
         complaint_type,
-        priority,
         trackingTag,
-        estimatedReviewTime,
         complaint_status: "pending", // Default status
         suggestedSolution, // NEW: Include the optional suggested solution
       },
@@ -305,5 +300,35 @@ export async function trackComplaint(req: Request, res: Response) {
     res.json(serializeComplaint(complaintWithoutNotes));
   } catch (error) {
     res.status(500).json({ error: "Failed to track complaint" });
+  }
+}
+
+export async function setComplaintPriority(req: Request, res: Response) {
+  const { id } = req.params;
+  const { priority } = req.body;
+
+  if (!priority || !["high", "mid", "low"].includes(priority)) {
+    return res
+      .status(400)
+      .json({ error: "Valid priority (high, mid, low) is required" });
+  }
+
+  try {
+    const complaint = await prisma.complaints.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    if (!complaint) {
+      return res.status(404).json({ error: "Complaint not found" });
+    }
+
+    const updatedComplaint = await prisma.complaints.update({
+      where: { id: BigInt(id) },
+      data: { priority, estimatedReviewTime: getEstimatedReviewTime(priority) },
+    });
+
+    res.json(serializeComplaint(updatedComplaint));
+  } catch (error) {
+    res.status(500).json({ error: "Failed to set complaint priority" });
   }
 }

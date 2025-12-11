@@ -76,7 +76,7 @@ model complaints {
   neighborhood      String    
   
   // --- NEW FIELDS ---
-  priority          Priority  @default(mid) // Priority of the complaint: high, mid, low
+  priority          Priority? // Priority of the complaint: high, mid, low (set by admin later)
   trackingTag       String    @unique // Unique tag for anonymous users to track their complaint
   estimatedReviewTime String? // Estimated time for review, e.g., "2-3 business days"
   notes             String?    // Internal notes from manager/admin/mukhtar

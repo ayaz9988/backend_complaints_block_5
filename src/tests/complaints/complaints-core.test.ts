@@ -122,7 +122,6 @@ describe("Complaints API", () => {
         location: "123 Main St",
         neighborhood: "Downtown",
         complaint_type: "noise",
-        priority: "high",
       };
 
       const response = await request(app)
@@ -132,15 +131,13 @@ describe("Complaints API", () => {
 
       expect(response.body).toHaveProperty("id");
       expect(response.body).toHaveProperty("trackingTag");
-      expect(response.body).toHaveProperty(
-        "estimatedReviewTime",
-        "1-2 business days",
-      );
       expect(response.body.submitterName).toBe(complaintData.submitterName);
       expect(response.body.complaint_status).toBe("pending");
+      expect(response.body.priority).toBeNull();
+      expect(response.body.estimatedReviewTime).toBeNull();
     });
 
-    it("should use default priority when not provided", async () => {
+    it("should create complaint without priority when not provided", async () => {
       const complaintData = {
         submitterName: "Jane Smith",
         contactNumber: "5551234567",
@@ -155,8 +152,8 @@ describe("Complaints API", () => {
         .send(complaintData)
         .expect(201);
 
-      expect(response.body.priority).toBe("mid");
-      expect(response.body.estimatedReviewTime).toBe("3-5 business days");
+      expect(response.body.priority).toBeNull();
+      expect(response.body.estimatedReviewTime).toBeNull();
     });
 
     it("should create a complaint with a suggested solution", async () => {
@@ -167,7 +164,6 @@ describe("Complaints API", () => {
         location: "789 Oak Street",
         neighborhood: "Westside",
         complaint_type: "infrastructure",
-        priority: "high",
         suggestedSolution:
           "The city should fill the pothole with asphalt and place a warning sign until it's fixed.",
       };
@@ -179,15 +175,13 @@ describe("Complaints API", () => {
 
       expect(response.body).toHaveProperty("id");
       expect(response.body).toHaveProperty("trackingTag");
-      expect(response.body).toHaveProperty(
-        "estimatedReviewTime",
-        "1-2 business days",
-      );
       expect(response.body.submitterName).toBe(complaintData.submitterName);
       expect(response.body.complaint_status).toBe("pending");
       expect(response.body.suggestedSolution).toBe(
         complaintData.suggestedSolution,
       );
+      expect(response.body.priority).toBeNull();
+      expect(response.body.estimatedReviewTime).toBeNull();
     });
 
     it("should create a complaint without a suggested solution", async () => {
@@ -198,7 +192,6 @@ describe("Complaints API", () => {
         location: "321 Pine Avenue",
         neighborhood: "Eastside",
         complaint_type: "infrastructure",
-        priority: "mid",
         // No suggestedSolution field
       };
 
@@ -209,13 +202,11 @@ describe("Complaints API", () => {
 
       expect(response.body).toHaveProperty("id");
       expect(response.body).toHaveProperty("trackingTag");
-      expect(response.body).toHaveProperty(
-        "estimatedReviewTime",
-        "3-5 business days",
-      );
       expect(response.body.submitterName).toBe(complaintData.submitterName);
       expect(response.body.complaint_status).toBe("pending");
       expect(response.body.suggestedSolution).toBeNull();
+      expect(response.body.priority).toBeNull();
+      expect(response.body.estimatedReviewTime).toBeNull();
     });
   });
 
@@ -599,6 +590,57 @@ describe("Complaints API", () => {
         .delete(`/v1/complaints/${testComplaintId}`)
         .set("Authorization", `Bearer ${adminToken}`)
         .expect(403);
+    });
+  });
+
+  describe("PATCH /complaints/:id/priority", () => {
+    it("should set complaint priority to high", async () => {
+      const response = await request(app)
+        .patch(`/v1/complaints/${testComplaintId}/priority`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ priority: "high" })
+        .expect(200);
+
+      expect(response.body.priority).toBe("high");
+      expect(response.body.estimatedReviewTime).toBe("1-2 business days");
+    });
+
+    it("should set complaint priority to mid", async () => {
+      const response = await request(app)
+        .patch(`/v1/complaints/${testComplaintId}/priority`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ priority: "mid" })
+        .expect(200);
+
+      expect(response.body.priority).toBe("mid");
+      expect(response.body.estimatedReviewTime).toBe("3-5 business days");
+    });
+
+    it("should set complaint priority to low", async () => {
+      const response = await request(app)
+        .patch(`/v1/complaints/${testComplaintId}/priority`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ priority: "low" })
+        .expect(200);
+
+      expect(response.body.priority).toBe("low");
+      expect(response.body.estimatedReviewTime).toBe("1 week");
+    });
+
+    it("should return 400 for invalid priority", async () => {
+      await request(app)
+        .patch(`/v1/complaints/${testComplaintId}/priority`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ priority: "invalid" })
+        .expect(400);
+    });
+
+    it("should return 404 for non-existent complaint", async () => {
+      await request(app)
+        .patch("/v1/complaints/999999/priority")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ priority: "high" })
+        .expect(404);
     });
   });
 });

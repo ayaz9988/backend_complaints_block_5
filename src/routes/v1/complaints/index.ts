@@ -7,7 +7,8 @@ import {
   updateComplaint,
   trackComplaint,
   acceptComplaint, // Import the new controller function
-  refuseComplaint, // Import the new controller function
+  refuseComplaint,
+  setComplaintPriority, // Import the new controller function
 } from "./controller";
 import requireRoles from "../../../middleware/requireRoles";
 
@@ -59,6 +60,12 @@ complaints.delete(
   "/:id",
   requireRoles(["manager", "mukhtar"]),
   deleteComplaint,
+);
+
+complaints.patch(
+  "/:id/priority",
+  requireRoles(["admin"]),
+  setComplaintPriority,
 );
 
 export default complaints;
