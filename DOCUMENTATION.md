@@ -52,12 +52,12 @@ Access to protected endpoints requires a valid JSON Web Token (JWT) to be includ
 
 ### Roles & Permissions
 
-| Role             | Permissions                                                                                                                                                                                  |
-| :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`manager`**    | **Superuser**: Can perform all actions. Can create, read, update, and delete announcements, achievements, initiatives, and users. Can view and manage all complaints.                      |
+| Role             | Permissions                                                                                                                                                                                                |
+| :--------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`manager`**    | **Superuser**: Can perform all actions. Can create, read, update, and delete announcements, achievements, initiatives, and users. Can view and manage all complaints.                                      |
 | **`admin`**      | Can create, read, update announcements, achievements, and initiatives. Can view and manage `mid` priority complaints. Can view, update (no password), and deactivate `mukhtar` users and their complaints. |
-| **`mukhtar`**    | Can only read (view) announcements and achievements. Can view and manage `low` priority complaints in their assigned neighborhood. Can soft-delete complaints.                               |
-| **Public Users** | Can only read (view) active announcements and achievements. Can submit new complaints, initiatives, and track them.                                                                         |
+| **`mukhtar`**    | Can only read (view) announcements and achievements. Can view and manage `low` priority complaints in their assigned neighborhood. Can soft-delete complaints.                                             |
+| **Public Users** | Can only read (view) active announcements and achievements. Can submit new complaints, initiatives, and track them.                                                                                        |
 
 ---
 
@@ -418,7 +418,7 @@ Set the priority of a complaint. Access is restricted to `admin` role only.
   {
     "id": "123",
     "priority": "high",
-    "estimatedReviewTime": "1-2 business days",
+    "estimatedReviewTime": "1-2 business days"
     // ... other complaint fields
   }
   ```
@@ -428,6 +428,31 @@ Set the priority of a complaint. Access is restricted to `admin` role only.
   - `401 Unauthorized`: Authentication failed.
   - `403 Forbidden`: User is not an admin.
   - `404 Not Found`: Complaint not found.
+  - `500 Internal Server Error`: Server error.
+
+### `PATCH /v1/complaints/:id/toggle-working-on`
+
+Toggle the working on status of a complaint. If the complaint is not currently being worked on, it sets it to working on by the current user. If it is being worked on, it removes the working on status. Access is restricted to `admin` role only.
+
+- **Authorization:** Required (`Bearer` token with `admin` role).
+- **URL Parameters:**
+  - `id` (string, required): The ID of the complaint.
+- **Request Body:** None.
+- **Success Response (200 OK):** Returns the updated complaint object with the toggled `is_working_on` status and `working_on_by` field.
+
+  ```json
+  {
+    "id": "123",
+    "is_working_on": true,
+    "working_on_by": "uuid_of_the_admin_user"
+    // ... other complaint fields
+  }
+  ```
+
+- **Error Responses:**
+  - `401 Unauthorized`: Authentication failed.
+  - `403 Forbidden`: User is not an admin.
+  - `404 Not Found`: Complaint or user not found.
   - `500 Internal Server Error`: Server error.
 
 ### `DELETE /v1/complaints/:id`
@@ -892,11 +917,11 @@ localStorage.setItem("accessToken", newAccessToken);
 
 ### Initiative Status Values
 
-| Status      | Description                          |
-| ----------- | ------------------------------------ |
-| `pending`   | Initiative is awaiting review        |
-| `approved`  | Initiative has been approved         |
-| `rejected`  | Initiative has been rejected         |
+| Status     | Description                   |
+| ---------- | ----------------------------- |
+| `pending`  | Initiative is awaiting review |
+| `approved` | Initiative has been approved  |
+| `rejected` | Initiative has been rejected  |
 
 ### Priority Levels
 

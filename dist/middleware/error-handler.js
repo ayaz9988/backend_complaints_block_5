@@ -9,13 +9,7 @@ exports.default = errorHandler;
 const config_1 = __importDefault(require("../config"));
 const utils_1 = require("../utils");
 const CustomError_1 = __importDefault(require("../errors/CustomError"));
-function errorHandler(
-  error,
-  req,
-  res,
-  // eslint-disable-next-line prettier/prettier
-  next,
-) {
+function errorHandler(error, req, res, next) {
   if (res.headersSent || config_1.default.debug) {
     next(error);
     return;

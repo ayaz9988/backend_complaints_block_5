@@ -5,6 +5,7 @@ var __importDefault =
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.hashRefreshToken = hashRefreshToken;
 exports.hashPassword = hashPassword;
 exports.verifyPassword = verifyPassword;
 exports.makeExpiryDate = makeExpiryDate;
@@ -14,7 +15,11 @@ exports.findValidRefreshToken = findValidRefreshToken;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const date_fns_1 = require("date-fns");
 const prisma_1 = __importDefault(require("../prisma"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const SALT_ROUNDS = 12;
+async function hashRefreshToken(token) {
+  return bcryptjs_1.default.hash(token, SALT_ROUNDS);
+}
 async function hashPassword(password) {
   return bcryptjs_1.default.hash(password, SALT_ROUNDS);
 }
@@ -24,22 +29,57 @@ async function verifyPassword(password, hash) {
 function makeExpiryDate(days) {
   return (0, date_fns_1.add)(new Date(), { days });
 }
+// export async function createRefreshToken(
+//   userId: string,
+//   token: string,
+//   expiresAt: Date,
+// ) {
+//   const decoded = jwt.decode(token) as { jti: string };
+//   const tokenHash = await hashRefreshToken(token);
+//   return prisma.refreshToken.create({
+//     data: {
+//       userId,
+//       token: tokenHash,
+//       expiresAt,
+//       revoked: false,
+//       jti: decoded.jti,
+//     },
+//   });
+// }
 async function createRefreshToken(userId, token, expiresAt) {
+  const decoded = jsonwebtoken_1.default.decode(token);
+  if (!decoded || !decoded.jti) {
+    throw new Error("Invalid token: No jti claim found");
+  }
+  const tokenHash = await hashRefreshToken(token);
   return prisma_1.default.refreshToken.create({
-    data: { userId, token, expiresAt },
+    data: {
+      userId,
+      token: tokenHash,
+      expiresAt,
+      revoked: false,
+      jti: decoded.jti,
+    },
   });
 }
-async function revokeRefreshToken(token) {
+async function revokeRefreshToken(userId, token) {
+  const decoded = jsonwebtoken_1.default.decode(token);
   return prisma_1.default.refreshToken.updateMany({
-    where: { token, revoked: false },
+    where: { userId, jti: decoded.jti },
     data: { revoked: true },
   });
 }
-async function findValidRefreshToken(token) {
-  const rt = await prisma_1.default.refreshToken.findUnique({
-    where: { token },
+async function findValidRefreshToken(userId, token) {
+  const decoded = jsonwebtoken_1.default.decode(token);
+  const storedToken = await prisma_1.default.refreshToken.findFirst({
+    where: {
+      userId,
+      jti: decoded.jti,
+      revoked: false,
+      expiresAt: { gt: new Date() },
+    },
   });
-  if (!rt || rt.revoked) return null;
-  if ((0, date_fns_1.isAfter)(new Date(), rt.expiresAt)) return null;
-  return rt;
+  if (!storedToken) return null;
+  const matches = await bcryptjs_1.default.compare(token, storedToken.token);
+  return matches ? storedToken : null;
 }

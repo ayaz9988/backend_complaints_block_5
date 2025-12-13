@@ -1,33 +1,53 @@
+"use strict";
+var __importDefault =
+  (this && this.__importDefault) ||
+  function (mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
+  };
+Object.defineProperty(exports, "__esModule", { value: true });
 // src/tests/complaints/complaints-core.test.ts
-import request from "supertest";
-import { Express } from "express";
-import { createTestUser, loginUser, UserRole } from "../helpers";
-import { createServer } from "../../server";
-import prisma from "../../prisma";
-
-const app = createServer();
-
+const supertest_1 = __importDefault(require("supertest"));
+const helpers_1 = require("../helpers");
+const server_1 = require("../../server");
+const prisma_1 = __importDefault(require("../../prisma"));
+const app = (0, server_1.createServer)();
 describe("Complaints API", () => {
-  let adminToken: string;
-  let managerToken: string;
-  let mukhtarToken: string;
-  let adminUserId: string;
-  let testComplaintId: string;
-  let testTrackingTag: string;
-
-  beforeEach(async () => {
-    // 1. Create the three required users for the test suite.
-    const adminUser = await createTestUser(
+  let adminToken;
+  let managerToken;
+  let mukhtarToken;
+  let testComplaintId;
+  let testTrackingTag;
+  beforeAll(async () => {
+    // First, delete any refresh tokens associated with our test users
+    await prisma_1.default.refreshToken.deleteMany({
+      where: {
+        user: {
+          email: {
+            in: ["admin@test.com", "manager@test.com", "mukhtar@test.com"],
+          },
+        },
+      },
+    });
+    // Clean up any existing test users before creating new ones
+    await prisma_1.default.user.deleteMany({
+      where: {
+        email: {
+          in: ["admin@test.com", "manager@test.com", "mukhtar@test.com"],
+        },
+      },
+    });
+    // Create test users for each role
+    const adminUser = await (0, helpers_1.createTestUser)(
       "admin@test.com",
       "password123",
       "admin",
     );
-    const managerUser = await createTestUser(
+    const managerUser = await (0, helpers_1.createTestUser)(
       "manager@test.com",
       "password123",
       "manager",
     );
-    await createTestUser(
+    const mukhtarUser = await (0, helpers_1.createTestUser)(
       "mukhtar@test.com",
       "password123",
       "mukhtar",
@@ -35,29 +55,29 @@ describe("Complaints API", () => {
       "Test Mukhtar",
       "Test Neighborhood",
     );
-
-    // 2. Log in as these users to get their tokens.
-    const adminLogin = await loginUser(app, "admin@test.com", "password123");
-    const managerLogin = await loginUser(
+    // Login to get tokens
+    const adminLogin = await (0, helpers_1.loginUser)(
+      app,
+      "admin@test.com",
+      "password123",
+    );
+    const managerLogin = await (0, helpers_1.loginUser)(
       app,
       "manager@test.com",
       "password123",
     );
-    const mukhtarLogin = await loginUser(
+    const mukhtarLogin = await (0, helpers_1.loginUser)(
       app,
       "mukhtar@test.com",
       "password123",
     );
-
     adminToken = adminLogin.body.accessToken;
     managerToken = managerLogin.body.accessToken;
     mukhtarToken = mukhtarLogin.body.accessToken;
-
-    adminUserId = adminUser.id;
-
+  });
+  beforeEach(async () => {
     // Clean up any existing test complaints before creating a new one
-    // Clean up any existing test complaints before creating a new one
-    await prisma.complaints.deleteMany({
+    await prisma_1.default.complaints.deleteMany({
       where: {
         trackingTag: {
           in: [
@@ -75,9 +95,8 @@ describe("Complaints API", () => {
         },
       },
     });
-
     // Create a test complaint for use in tests
-    const testComplaint = await prisma.complaints.create({
+    const testComplaint = await prisma_1.default.complaints.create({
       data: {
         submitterName: "Test Submitter",
         contactNumber: "1234567890",
@@ -91,11 +110,9 @@ describe("Complaints API", () => {
         complaint_status: "pending",
       },
     });
-
     testComplaintId = testComplaint.id.toString();
     testTrackingTag = testComplaint.trackingTag;
-  }, 30000);
-
+  });
   describe("POST /complaints", () => {
     it("should create a new complaint", async () => {
       const complaintData = {
@@ -106,12 +123,10 @@ describe("Complaints API", () => {
         neighborhood: "Downtown",
         complaint_type: "noise",
       };
-
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .post("/v1/complaints")
         .send(complaintData)
         .expect(201);
-
       expect(response.body).toHaveProperty("id");
       expect(response.body).toHaveProperty("trackingTag");
       expect(response.body.submitterName).toBe(complaintData.submitterName);
@@ -119,7 +134,6 @@ describe("Complaints API", () => {
       expect(response.body.priority).toBeNull();
       expect(response.body.estimatedReviewTime).toBeNull();
     });
-
     it("should create complaint without priority when not provided", async () => {
       const complaintData = {
         submitterName: "Jane Smith",
@@ -129,16 +143,13 @@ describe("Complaints API", () => {
         neighborhood: "Uptown",
         complaint_type: "water",
       };
-
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .post("/v1/complaints")
         .send(complaintData)
         .expect(201);
-
       expect(response.body.priority).toBeNull();
       expect(response.body.estimatedReviewTime).toBeNull();
     });
-
     it("should create a complaint with a suggested solution", async () => {
       const complaintData = {
         submitterName: "Alice Johnson",
@@ -150,12 +161,10 @@ describe("Complaints API", () => {
         suggestedSolution:
           "The city should fill the pothole with asphalt and place a warning sign until it's fixed.",
       };
-
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .post("/v1/complaints")
         .send(complaintData)
         .expect(201);
-
       expect(response.body).toHaveProperty("id");
       expect(response.body).toHaveProperty("trackingTag");
       expect(response.body.submitterName).toBe(complaintData.submitterName);
@@ -166,7 +175,6 @@ describe("Complaints API", () => {
       expect(response.body.priority).toBeNull();
       expect(response.body.estimatedReviewTime).toBeNull();
     });
-
     it("should create a complaint without a suggested solution", async () => {
       const complaintData = {
         submitterName: "Bob Wilson",
@@ -177,12 +185,10 @@ describe("Complaints API", () => {
         complaint_type: "infrastructure",
         // No suggestedSolution field
       };
-
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .post("/v1/complaints")
         .send(complaintData)
         .expect(201);
-
       expect(response.body).toHaveProperty("id");
       expect(response.body).toHaveProperty("trackingTag");
       expect(response.body.submitterName).toBe(complaintData.submitterName);
@@ -192,29 +198,25 @@ describe("Complaints API", () => {
       expect(response.body.estimatedReviewTime).toBeNull();
     });
   });
-
   describe("GET /complaints/track/:trackingTag", () => {
     it("should return a complaint by tracking tag", async () => {
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .get(`/v1/complaints/track/${testTrackingTag}`)
         .expect(200);
-
       expect(response.body).toHaveProperty("id");
       expect(response.body).toHaveProperty("trackingTag", testTrackingTag);
       expect(response.body).not.toHaveProperty("notes"); // Notes should be omitted
     });
-
     it("should return 404 for non-existent tracking tag", async () => {
-      await request(app)
+      await (0, supertest_1.default)(app)
         .get("/v1/complaints/track/non-existent-tag")
         .expect(404);
     });
   });
-
   describe("GET /complaints", () => {
     it("should return high priority complaints for manager", async () => {
       // Create test complaints with different priorities
-      await prisma.complaints.createMany({
+      await prisma_1.default.complaints.createMany({
         data: [
           {
             submitterName: "High Priority 1",
@@ -254,94 +256,80 @@ describe("Complaints API", () => {
           },
         ],
       });
-
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .get("/v1/complaints")
         .set("Authorization", `Bearer ${managerToken}`)
         .expect(200);
-
       expect(response.body.length).toBeGreaterThan(0);
       // Manager should only see high priority complaints
       expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        response.body.every((complaint: any) => complaint.priority === "high"),
+        response.body.every((complaint) => complaint.priority === "high"),
       ).toBe(true);
     });
-
     it("should return mid priority complaints for admin", async () => {
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .get("/v1/complaints")
         .set("Authorization", `Bearer ${adminToken}`)
         .expect(200);
-
       // Admin should only see mid priority complaints
       expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        response.body.every((complaint: any) => complaint.priority === "mid"),
+        response.body.every((complaint) => complaint.priority === "mid"),
       ).toBe(true);
     });
-
     it("should return low priority complaints for mukhtar", async () => {
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .get("/v1/complaints")
         .set("Authorization", `Bearer ${mukhtarToken}`)
         .expect(200);
-
       // Mukhtar should only see low priority complaints
       expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        response.body.every((complaint: any) => complaint.priority === "low"),
+        response.body.every((complaint) => complaint.priority === "low"),
       ).toBe(true);
     });
   });
-
   describe("GET /complaints/:id", () => {
     it("should return a specific complaint", async () => {
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .get(`/v1/complaints/${testComplaintId}`)
         .set("Authorization", `Bearer ${adminToken}`)
         .expect(200);
-
       expect(response.body).toHaveProperty("id", testComplaintId);
       expect(response.body).toHaveProperty("trackingTag", testTrackingTag);
     });
-
     it("should return 404 for non-existent complaint", async () => {
-      await request(app)
+      await (0, supertest_1.default)(app)
         .get("/v1/complaints/999999")
         .set("Authorization", `Bearer ${adminToken}`)
         .expect(404);
     });
   });
-
   describe("PATCH /complaints/:id/accept", () => {
     it("should accept a complaint with solution info", async () => {
       const solutionData = {
         solutionInfo: "Fixed the noise issue by talking to neighbors",
       };
-
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${testComplaintId}/accept`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send(solutionData)
         .expect(200);
-
       expect(response.body.complaint_status).toBe("accepted");
       expect(response.body.solutionInfo).toBe(solutionData.solutionInfo);
       expect(response.body.refusalReason).toBeNull();
     });
-
     it("should reject accepting a complaint without solution info", async () => {
-      await request(app)
+      await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${testComplaintId}/accept`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send({}) // Missing solutionInfo
         .expect(400);
     });
-
     it("should reject accepting a complaint that is not pending", async () => {
       // Create a complaint that's already accepted
-      const testComplaint = await prisma.complaints.create({
+      const testComplaint = await prisma_1.default.complaints.create({
         data: {
           submitterName: "Already Accepted",
           contactNumber: "1234567890",
@@ -356,21 +344,18 @@ describe("Complaints API", () => {
           solutionInfo: "Already solved",
         },
       });
-
       const complaintId = testComplaint.id.toString();
-
-      await request(app)
+      await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${complaintId}/accept`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send({ solutionInfo: "New solution" })
         .expect(400);
     });
   });
-
   describe("PATCH /complaints/:id/refuse", () => {
     it("should refuse a complaint with refusal reason", async () => {
       // Create a new complaint for this test
-      const testComplaint = await prisma.complaints.create({
+      const testComplaint = await prisma_1.default.complaints.create({
         data: {
           submitterName: "To Refuse",
           contactNumber: "1234567890",
@@ -384,27 +369,22 @@ describe("Complaints API", () => {
           complaint_status: "pending",
         },
       });
-
       const complaintId = testComplaint.id.toString();
-
       const refusalData = {
         refusalReason: "Complaint is outside our jurisdiction",
       };
-
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${complaintId}/refuse`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send(refusalData)
         .expect(200);
-
       expect(response.body.complaint_status).toBe("refused");
       expect(response.body.refusalReason).toBe(refusalData.refusalReason);
       expect(response.body.solutionInfo).toBeNull();
     });
-
     it("should reject refusing a complaint without refusal reason", async () => {
       // Create a new complaint for this test
-      const testComplaint = await prisma.complaints.create({
+      const testComplaint = await prisma_1.default.complaints.create({
         data: {
           submitterName: "To Refuse 2",
           contactNumber: "1234567890",
@@ -418,19 +398,16 @@ describe("Complaints API", () => {
           complaint_status: "pending",
         },
       });
-
       const complaintId = testComplaint.id.toString();
-
-      await request(app)
+      await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${complaintId}/refuse`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send({}) // Missing refusalReason
         .expect(400);
     });
-
     it("should reject refusing a complaint that is not pending", async () => {
       // Create a complaint that's already refused
-      const testComplaint = await prisma.complaints.create({
+      const testComplaint = await prisma_1.default.complaints.create({
         data: {
           submitterName: "Already Refused",
           contactNumber: "1234567890",
@@ -445,67 +422,55 @@ describe("Complaints API", () => {
           refusalReason: "Already refused",
         },
       });
-
       const complaintId = testComplaint.id.toString();
-
-      await request(app)
+      await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${complaintId}/refuse`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send({ refusalReason: "New refusal reason" })
         .expect(400);
     });
   });
-
   describe("PATCH /complaints/:id", () => {
     it("should update complaint priority", async () => {
       const updateData = {
         priority: "high",
       };
-
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${testComplaintId}`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send(updateData)
         .expect(200);
-
       expect(response.body.priority).toBe("high");
     });
-
     it("should update complaint notes", async () => {
       const updateData = {
         notes: "Internal notes about this complaint",
       };
-
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${testComplaintId}`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send(updateData)
         .expect(200);
-
       expect(response.body.notes).toBe(updateData.notes);
     });
-
     it("should update estimated review time", async () => {
       const updateData = {
         estimatedReviewTime: "2-3 business days",
       };
-
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${testComplaintId}`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send(updateData)
         .expect(200);
-
       expect(response.body.estimatedReviewTime).toBe(
         updateData.estimatedReviewTime,
       );
     });
   });
-
   describe("DELETE /complaints/:id", () => {
     it("should hard delete a complaint for manager", async () => {
       // Create a test complaint to delete
-      const testComplaint = await prisma.complaints.create({
+      const testComplaint = await prisma_1.default.complaints.create({
         data: {
           submitterName: "To Delete",
           contactNumber: "1234567890",
@@ -519,25 +484,20 @@ describe("Complaints API", () => {
           complaint_status: "pending",
         },
       });
-
       const complaintId = testComplaint.id.toString();
-
-      await request(app)
+      await (0, supertest_1.default)(app)
         .delete(`/v1/complaints/${complaintId}`)
         .set("Authorization", `Bearer ${managerToken}`)
         .expect(200);
-
       // Verify the complaint is actually deleted
-      const deletedComplaint = await prisma.complaints.findUnique({
+      const deletedComplaint = await prisma_1.default.complaints.findUnique({
         where: { id: BigInt(complaintId) },
       });
-
       expect(deletedComplaint).toBeNull();
     });
-
     it("should soft delete a complaint for mukhtar", async () => {
       // Create a test complaint to soft delete
-      const testComplaint = await prisma.complaints.create({
+      const testComplaint = await prisma_1.default.complaints.create({
         data: {
           submitterName: "To Soft Delete",
           contactNumber: "1234567890",
@@ -551,121 +511,67 @@ describe("Complaints API", () => {
           complaint_status: "pending",
         },
       });
-
       const complaintId = testComplaint.id.toString();
-
-      await request(app)
+      await (0, supertest_1.default)(app)
         .delete(`/v1/complaints/${complaintId}`)
         .set("Authorization", `Bearer ${mukhtarToken}`)
         .expect(200);
-
       // Verify the complaint is soft deleted (has deletedAt)
-      const softDeletedComplaint = await prisma.complaints.findUnique({
-        where: { id: BigInt(complaintId) },
-      });
-
+      const softDeletedComplaint = await prisma_1.default.complaints.findUnique(
+        {
+          where: { id: BigInt(complaintId) },
+        },
+      );
       expect(softDeletedComplaint).not.toBeNull();
       expect(softDeletedComplaint?.deletedAt).not.toBeNull();
     });
-
     it("should return 403 for admin trying to delete", async () => {
-      await request(app)
+      await (0, supertest_1.default)(app)
         .delete(`/v1/complaints/${testComplaintId}`)
         .set("Authorization", `Bearer ${adminToken}`)
         .expect(403);
     });
   });
-
   describe("PATCH /complaints/:id/priority", () => {
     it("should set complaint priority to high", async () => {
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${testComplaintId}/priority`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send({ priority: "high" })
         .expect(200);
-
       expect(response.body.priority).toBe("high");
       expect(response.body.estimatedReviewTime).toBe("1-2 business days");
     });
-
     it("should set complaint priority to mid", async () => {
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${testComplaintId}/priority`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send({ priority: "mid" })
         .expect(200);
-
       expect(response.body.priority).toBe("mid");
       expect(response.body.estimatedReviewTime).toBe("3-5 business days");
     });
-
     it("should set complaint priority to low", async () => {
-      const response = await request(app)
+      const response = await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${testComplaintId}/priority`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send({ priority: "low" })
         .expect(200);
-
       expect(response.body.priority).toBe("low");
       expect(response.body.estimatedReviewTime).toBe("1 week");
     });
-
     it("should return 400 for invalid priority", async () => {
-      await request(app)
+      await (0, supertest_1.default)(app)
         .patch(`/v1/complaints/${testComplaintId}/priority`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send({ priority: "invalid" })
         .expect(400);
     });
-
     it("should return 404 for non-existent complaint", async () => {
-      await request(app)
+      await (0, supertest_1.default)(app)
         .patch("/v1/complaints/999999/priority")
         .set("Authorization", `Bearer ${adminToken}`)
         .send({ priority: "high" })
-        .expect(404);
-    });
-  });
-
-  describe("PATCH /complaints/:id/toggle-working-on", () => {
-    it("should toggle is_working_on from false to true and set working_on_by", async () => {
-      // First, let's verify the complaint exists by calling GET
-      const response = await request(app)
-        .patch(`/v1/complaints/${testComplaintId}/toggle-working-on`)
-        .set("Authorization", `Bearer ${adminToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.is_working_on).toBe(true);
-      expect(response.body.working_on_by).toBe(adminUserId);
-    });
-    it("should toggle is_working_on from true to false and set working_on_by to null", async () => {
-      // First toggle to true
-      await request(app)
-        .patch(`/v1/complaints/${testComplaintId}/toggle-working-on`)
-        .set("Authorization", `Bearer ${adminToken}`)
-        .expect(200);
-
-      // Then toggle back to false
-      const response = await request(app)
-        .patch(`/v1/complaints/${testComplaintId}/toggle-working-on`)
-        .set("Authorization", `Bearer ${adminToken}`)
-        .expect(200);
-
-      expect(response.body.is_working_on).toBe(false);
-      expect(response.body.working_on_by).toBeNull();
-    });
-
-    it("should return 403 for non-admin users", async () => {
-      await request(app)
-        .patch(`/v1/complaints/${testComplaintId}/toggle-working-on`)
-        .set("Authorization", `Bearer ${mukhtarToken}`)
-        .expect(403);
-    });
-
-    it("should return 404 for non-existent complaint", async () => {
-      await request(app)
-        .patch("/v1/complaints/999999/toggle-working-on")
-        .set("Authorization", `Bearer ${adminToken}`)
         .expect(404);
     });
   });

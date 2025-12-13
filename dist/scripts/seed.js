@@ -10,14 +10,50 @@ dotenv_1.default.config();
 const prisma_1 = __importDefault(require("../prisma"));
 const auth_1 = require("../services/auth");
 async function main() {
-  const email = "admin@example.com";
-  const pw = "ChangeMe123!";
-  const hashed = await (0, auth_1.hashPassword)(pw);
-  await prisma_1.default.user.upsert({
-    where: { email },
-    update: { passwordHash: hashed, role: "admin" },
-    create: { email, passwordHash: hashed, role: "admin" },
-  });
-  console.log("Admin seeded:", email);
+  try {
+    const email = "manager@example.com";
+    const password = "ChangeMe123!";
+    const name = "System Manager";
+    const role = "manager";
+    const isActive = true;
+    // Hash password
+    const passwordHash = await (0, auth_1.hashPassword)(password);
+    // Check if user already exists
+    const existingUser = await prisma_1.default.user.findUnique({
+      where: { email },
+    });
+    if (existingUser) {
+      // Update existing user
+      await prisma_1.default.user.update({
+        where: { email },
+        data: {
+          passwordHash,
+          role,
+          name,
+          is_active: isActive,
+        },
+      });
+      console.log(`Manager user updated: ${email}`);
+    } else {
+      // Create new user
+      await prisma_1.default.user.create({
+        data: {
+          email,
+          passwordHash,
+          role,
+          name,
+          is_active: isActive,
+        },
+      });
+      console.log(`Manager user created: ${email}`);
+    }
+    console.log("Super user (manager) seeded successfully!");
+  } catch (error) {
+    console.error("Error seeding manager user:", error);
+    process.exit(1);
+  } finally {
+    await prisma_1.default.$disconnect();
+    process.exit();
+  }
 }
-main().finally(() => process.exit());
+main();

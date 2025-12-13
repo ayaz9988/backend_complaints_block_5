@@ -1,11 +1,17 @@
 "use strict";
+// auth/controller.ts
 var __importDefault =
   (this && this.__importDefault) ||
   function (mod) {
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logout = exports.refresh = exports.login = exports.register = void 0;
+exports.getCurrentUser =
+  exports.logout =
+  exports.refresh =
+  exports.login =
+  exports.register =
+    void 0;
 exports.setRefreshCookie = setRefreshCookie;
 exports.clearRefreshCookie = clearRefreshCookie;
 const config_1 = __importDefault(require("../../../config"));
@@ -25,7 +31,7 @@ function setRefreshCookie(res, token, days = REFRESH_DAYS) {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     secure: isProd, // true in production
-    sameSite: isProd ? "none" : "lax",
+    sameSite: "lax",
     domain: isProd ? COOKIE_DOMAIN : undefined,
     maxAge,
   });
@@ -35,65 +41,103 @@ function clearRefreshCookie(res) {
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    sameSite: "lax",
     domain: isProd ? COOKIE_DOMAIN : undefined,
   });
 }
+const allowedRoles = ["manager", "admin", "mukhtar"];
 const register = async (req, res) => {
-  const { email, password, role } = req.body;
-  if (!email || !password || !role)
-    return res.status(400).json({ error: "Missing fields" });
-  const allowed = ["admin", "Director", "head_of_neighborhood"];
-  if (!allowed.includes(role))
-    return res.status(400).json({ error: "Invalid role" });
-  const passwordHash = await (0, auth_1.hashPassword)(password);
-  const user = await prisma_1.default.user.create({
-    data: { email, passwordHash, role },
-  });
-  res.json({ id: user.id, email: user.email, role: user.role });
+  try {
+    const { name, email, password, role, neighborhood } = req.body;
+    if (!name || !email || !password || !role)
+      return res.status(400).json({ error: "Missing fields" });
+    if (!allowedRoles.includes(role))
+      return res.status(400).json({ error: "Invalid role" });
+    if (role === "mukhtar" && !neighborhood) {
+      return res
+        .status(400)
+        .json({ error: "Neighborhood is required for mukhtar role" });
+    }
+    const userNeighborhood = role === "mukhtar" ? neighborhood : null;
+    const passwordHash = await (0, auth_1.hashPassword)(password);
+    const user = await prisma_1.default.user.create({
+      data: {
+        name,
+        email,
+        passwordHash,
+        role,
+        is_active: true,
+        neighborhood: userNeighborhood,
+      },
+    });
+    res.status(201).json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      neighborhood: user.neighborhood,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 exports.register = register;
 const login = async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ error: "Missing credentials" });
-  const user = await prisma_1.default.user.findUnique({ where: { email } });
-  if (!user) return res.status(401).json({ error: "Invalid credentials" });
-  const ok = await (0, auth_1.verifyPassword)(password, user.passwordHash);
-  if (!ok) return res.status(401).json({ error: "Invalid credentials" });
-  const accessToken = (0, jwt_1.signAccessToken)(
-    { sub: user.id, role: user.role, email: user.email },
-    ACCESS_SECRET,
-    ACCESS_EXPIRES,
-  );
-  const refreshToken = (0, jwt_1.signRefreshToken)(
-    { sub: user.id },
-    REFRESH_SECRET,
-    `${REFRESH_DAYS}d`,
-  );
-  const expiresAt = (0, auth_1.makeExpiryDate)(REFRESH_DAYS);
-  await (0, auth_1.createRefreshToken)(user.id, refreshToken, expiresAt);
-  setRefreshCookie(res, refreshToken);
-  res.json({
-    accessToken,
-    expiresIn: ACCESS_EXPIRES,
-    user: { id: user.id, email: user.email, role: user.role },
-  });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ error: "Missing credentials" });
+    const user = await prisma_1.default.user.findUnique({ where: { email } });
+    if (!user || !user.is_active)
+      return res
+        .status(401)
+        .json({ error: "Invalid credentials or inactive user" });
+    const ok = await (0, auth_1.verifyPassword)(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: "Invalid credentials" });
+    const accessToken = (0, jwt_1.signAccessToken)(
+      { sub: user.id, name: user.name, role: user.role, email: user.email },
+      ACCESS_SECRET,
+      ACCESS_EXPIRES,
+    );
+    const refreshToken = (0, jwt_1.signRefreshToken)(
+      { sub: user.id },
+      REFRESH_SECRET,
+      `${REFRESH_DAYS}d`,
+    );
+    const expiresAt = (0, auth_1.makeExpiryDate)(REFRESH_DAYS);
+    await (0, auth_1.createRefreshToken)(user.id, refreshToken, expiresAt);
+    setRefreshCookie(res, refreshToken);
+    res.json({
+      accessToken,
+      expiresIn: ACCESS_EXPIRES,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        neighborhood: user.neighborhood,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 exports.login = login;
 const refresh = async (req, res) => {
   const token = req.cookies[COOKIE_NAME];
   if (!token) return res.status(401).json({ error: "No refresh token" });
-  const rt = await (0, auth_1.findValidRefreshToken)(token);
-  if (!rt) return res.status(401).json({ error: "Invalid refresh token" });
   try {
     const payload = (0, jwt_1.verifyToken)(token, REFRESH_SECRET);
     // @ts-expect-error payload of unknown type
+    const userId = payload.sub;
+    const rt = await (0, auth_1.findValidRefreshToken)(userId, token);
+    if (!rt) return res.status(401).json({ error: "Invalid refresh token" });
     const user = await prisma_1.default.user.findUnique({
-      where: { id: payload.sub },
+      where: { id: userId },
     });
-    if (!user) return res.status(401).json({ error: "Invalid" });
-    await (0, auth_1.revokeRefreshToken)(token);
+    if (!user || !user.is_active)
+      return res.status(401).json({ error: "Invalid or inactive user" });
+    await (0, auth_1.revokeRefreshToken)(user.id, token);
     const newRefresh = (0, jwt_1.signRefreshToken)(
       { sub: user.id },
       REFRESH_SECRET,
@@ -113,7 +157,13 @@ const refresh = async (req, res) => {
     res.json({
       accessToken,
       expiresIn: ACCESS_EXPIRES,
-      user: { id: user.id, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        neighborhood: user.neighborhood,
+      },
     });
   } catch {
     return res.status(401).json({ error: "Invalid token" });
@@ -123,9 +173,45 @@ exports.refresh = refresh;
 const logout = async (req, res) => {
   const token = req.cookies[COOKIE_NAME];
   if (token) {
-    await (0, auth_1.revokeRefreshToken)(token);
-    clearRefreshCookie(res);
+    try {
+      const payload = (0, jwt_1.verifyToken)(token, REFRESH_SECRET);
+      // @ts-expect-error payload of unknown type
+      const userId = payload.sub;
+      await (0, auth_1.revokeRefreshToken)(userId, token);
+    } catch (error) {
+      /* empty */
+    } finally {
+      clearRefreshCookie(res);
+    }
   }
-  res.json({ ok: true });
+  return res.status(200).json({ ok: true });
 };
 exports.logout = logout;
+// Get the current authenticated user's information
+const getCurrentUser = async (req, res) => {
+  try {
+    if (!req.user || !req.user.sub) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    const userId = req.user.sub;
+    const user = await prisma_1.default.user.findUnique({
+      where: { id: userId },
+      // Select only the fields you want to return to the client
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        neighborhood: true,
+        is_active: true,
+      },
+    });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+exports.getCurrentUser = getCurrentUser;

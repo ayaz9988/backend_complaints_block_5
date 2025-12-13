@@ -9,6 +9,7 @@ import {
   acceptComplaint, // Import the new controller function
   refuseComplaint,
   setComplaintPriority, // Import the new controller function
+  toggleWorkingOn,
 } from "./controller";
 import requireRoles from "../../../middleware/requireRoles";
 
@@ -66,6 +67,12 @@ complaints.patch(
   "/:id/priority",
   requireRoles(["admin"]),
   setComplaintPriority,
+);
+
+complaints.patch(
+  "/:id/toggle-working-on",
+  requireRoles(["admin"]),
+  toggleWorkingOn,
 );
 
 export default complaints;

@@ -53,6 +53,7 @@ model User {
   complaintsHandled complaints[] @relation("MukhtarInitial") // complaints accepted by this mukhtar
   announcements    Announcement[] // announcements created by this user
   achievements     Achievement[] // achievements created by this user
+  workingOnComplaints complaints[] @relation("WorkingOnBy")
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -92,6 +93,8 @@ model complaints {
   solutionInfo      String?    // Details of the solution if status is 'accepted'
   refusalReason     String?    // Reason for refusal if status is 'refused'
   suggestedSolution String?    // Optional solution suggested by the submitter
+  is_working_on     Boolean   @default(false)
+  working_on_by     String?
   // --- END NEW FIELDS ---
 
   complaint_status  Status    @default(pending)
@@ -100,8 +103,8 @@ model complaints {
   deletedAt         DateTime? // soft delete timestamp; null means active
 
   handler User? @relation("MukhtarInitial", fields: [mukhtarInitialId], references: [id])
+  workingOnBy User? @relation("WorkingOnBy", fields: [working_on_by], references: [id])
 }
-
 // Announcements created by managers and admins, visible to all users
 model Announcement {
   id        String       @id @default(uuid())

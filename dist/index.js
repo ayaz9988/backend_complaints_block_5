@@ -8,6 +8,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = __importDefault(require("./config"));
 const server_1 = require("./server");
 const server = (0, server_1.createServer)();
-server.listen(config_1.default.port, () => {
+server.listen(config_1.default.port, "0.0.0.0", () => {
   console.log(`api running on ${config_1.default.port}`);
 });
