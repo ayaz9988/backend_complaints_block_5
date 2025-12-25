@@ -479,9 +479,10 @@ Delete a complaint.
 
 ### `POST /v1/initiatives`
 
-Create a new initiative (public endpoint).
+Create a new initiative (public endpoint with rate limiting).
 
 - **Authorization:** None (public).
+- **Rate Limiting:** Anonymous users are limited to 1 request per hour and 5 requests per day.
 - **Request Body (JSON):**
 
   ```json
@@ -512,7 +513,7 @@ Create a new initiative (public endpoint).
   }
   ```
 
-- **Error Responses:** `400`, `500`.
+- **Error Responses:** `400`, `429`, `500`.
 
 ### `GET /v1/initiatives`
 
@@ -529,8 +530,9 @@ Get details of a specific initiative.
 - **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
 - **URL Parameters:**
   - `id` (string, required): The ID of the initiative.
+- **Validation:** Request parameters are validated using Zod schema.
 - **Success Response (200 OK):** Returns the initiative object.
-- **Error Responses:** `401`, `403`, `404`, `500`.
+- **Error Responses:** `400`, `401`, `403`, `404`, `500`.
 
 ### `PATCH /v1/initiatives/:id`
 
@@ -539,6 +541,7 @@ Update an initiative.
 - **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
 - **URL Parameters:**
   - `id` (string, required): The ID of the initiative.
+- **Validation:** Request parameters and body are validated using Zod schemas.
 - **Request Body (JSON):** Provide only the fields you want to update.
 
   ```json
@@ -554,7 +557,7 @@ Update an initiative.
   ```
 
 - **Success Response (200 OK):** Returns the updated initiative object.
-- **Error Responses:** `401`, `403`, `404`, `500`.
+- **Error Responses:** `400`, `401`, `403`, `404`, `500`.
 
 ### `DELETE /v1/initiatives/:id`
 
@@ -563,13 +566,14 @@ Delete an initiative.
 - **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
 - **URL Parameters:**
   - `id` (string, required): The ID of the initiative to delete.
+- **Validation:** Request parameters are validated using Zod schema.
 - **Success Response (200 OK):**
 
   ```json
   { "message": "Initiative deleted successfully" }
   ```
 
-- **Error Responses:** `401`, `403`, `404`, `500`.
+- **Error Responses:** `400`, `401`, `403`, `404`, `500`.
 
 ---
 
@@ -828,6 +832,15 @@ For validation errors, the response may include additional details:
 }
 ```
 
+### Input Validation
+
+All API endpoints use Zod schema validation to ensure data integrity and security:
+
+- **Request Parameters**: URL parameters are validated against defined schemas
+- **Request Bodies**: JSON payloads are validated for required fields, data types, and format
+- **Error Responses**: Validation failures return `400 Bad Request` with specific error details
+- **Security**: Prevents injection attacks and ensures data consistency
+
 ### Common HTTP Status Codes
 
 | Status Code | Description                                           |
@@ -857,6 +870,7 @@ The API implements rate limiting to protect against abuse and ensure fair usage:
   - Authentication endpoints (`/v1/auth/login`, `/v1/auth/register`)
   - Complaint submission (`/v1/complaints`)
   - Complaint tracking (`/v1/complaints/track/:trackingTag`)
+  - Initiative submission (`/v1/initiatives`)
 - **Response Headers**: Include rate limit information (`RateLimit-*` headers)
 - **Error Response**: Returns `429 Too Many Requests` with retry information
 

@@ -13,12 +13,14 @@ import {
   updateInitiativeSchema,
   initiativeIdSchema,
 } from "../../../validation";
+import { anonymousCombinedRateLimiter } from "../../../middleware/rateLimiter";
 
 const initiatives = express.Router();
 
 // Public endpoint for creating initiatives
 initiatives.post(
   "/",
+  anonymousCombinedRateLimiter,
   validateWithZod(createInitiativeSchema),
   createInitiative,
 );
