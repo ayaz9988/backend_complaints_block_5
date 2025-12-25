@@ -168,7 +168,9 @@ describe("Achievements API", () => {
     });
 
     it("should return 404 for non-existent achievement", async () => {
-      await request(app).get("/v1/achievements/non-existent-id").expect(404);
+      await request(app)
+        .get("/v1/achievements/00000000-0000-0000-0000-000000000000")
+        .expect(404);
     });
 
     it("should return 404 for an inactive achievement", async () => {
@@ -235,7 +237,7 @@ describe("Achievements API", () => {
 
     it("should return 404 when trying to update a non-existent achievement", async () => {
       await request(app)
-        .patch("/v1/achievements/non-existent-id")
+        .patch("/v1/achievements/00000000-0000-0000-0000-000000000000")
         .set("Authorization", `Bearer ${adminToken}`)
         .send({ title: "Doesn't exist" })
         .expect(404);
@@ -292,7 +294,7 @@ describe("Achievements API", () => {
 
     it("should return 404 when trying to delete a non-existent achievement", async () => {
       await request(app)
-        .delete("/v1/achievements/non-existent-id")
+        .delete("/v1/achievements/00000000-0000-0000-0000-000000000000")
         .set("Authorization", `Bearer ${adminToken}`)
         .expect(404);
     });

@@ -236,10 +236,23 @@ describe("Initiatives API", () => {
         .patch(`/v1/initiatives/${testInitiativeId}`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send(updateData)
-        .expect(200);
+        .expect(400);
 
-      // Status should not change
-      expect(response.body.status).toBe("pending");
+      expect(response.body.error).toHaveProperty(
+        "message",
+        "Validation failed",
+      );
+      expect(response.body.error).toHaveProperty("details");
+      expect(response.body.error.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "body.status",
+            message:
+              "Invalid initiative status. Must be one of: pending, approved, rejected",
+            code: "invalid_enum_value",
+          }),
+        ]),
+      );
     });
 
     it("should return 404 for non-existent initiative", async () => {

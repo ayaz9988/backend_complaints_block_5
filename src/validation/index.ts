@@ -351,9 +351,11 @@ export const updateInitiativeSchema = z.object({
 
 // Query schemas
 export const getUsersByRoleSchema = z.object({
-  query: z.object({
-    role: z.enum(["admin", "mukhtar", "manager"]).optional(),
-  }),
+  query: z
+    .object({
+      role: z.enum(["admin", "mukhtar", "manager"]).optional(),
+    })
+    .optional(),
 });
 
 export const getUserComplaintsSchema = z.object({

@@ -132,7 +132,7 @@ describe("Validation Schemas", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data?.body.contactNumber).toBe("1234567890");
+      expect(result.data?.body.contactNumber).toBe("123-456-7890");
       expect(result.data?.body.description).toBe(
         "This is a test complaint description",
       );

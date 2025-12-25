@@ -95,7 +95,17 @@ describe("POST /v1/auth/login", () => {
     });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("Missing credentials");
+    expect(response.body.error).toHaveProperty("message", "Validation failed");
+    expect(response.body.error).toHaveProperty("details");
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "body.email",
+          message: "Required",
+          code: "invalid_type",
+        }),
+      ]),
+    );
   });
 
   it("should return 400 if password is missing", async () => {
@@ -104,7 +114,17 @@ describe("POST /v1/auth/login", () => {
     });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("Missing credentials");
+    expect(response.body.error).toHaveProperty("message", "Validation failed");
+    expect(response.body.error).toHaveProperty("details");
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "body.password",
+          message: "Required",
+          code: "invalid_type",
+        }),
+      ]),
+    );
   });
 
   it("should never return password or password hash", async () => {

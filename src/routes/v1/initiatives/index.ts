@@ -36,7 +36,6 @@ initiatives.get(
 initiatives.patch(
   "/:id",
   requireRoles(["manager", "admin"]),
-  validateWithZod(initiativeIdSchema),
   validateWithZod(updateInitiativeSchema),
   updateInitiative,
 );
