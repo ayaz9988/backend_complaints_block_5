@@ -12,14 +12,27 @@ import {
   toggleWorkingOn,
 } from "./controller";
 import requireRoles from "../../../middleware/requireRoles";
+import { validateWithZod } from "../../../validation";
+import {
+  createComplaintSchema,
+  updateComplaintSchema,
+  complaintIdSchema,
+  trackingTagSchemaForTrack,
+  solutionInfoSchemaForAccept,
+  refusalReasonSchemaForRefuse,
+} from "../../../validation";
 
 const complaints = express.Router();
 
 // Anyone can create a complaint
-complaints.post("/", createComplaint);
+complaints.post("/", validateWithZod(createComplaintSchema), createComplaint);
 
 // NEW: Public endpoint for anyone to track a complaint by its tag
-complaints.get("/track/:trackingTag", trackComplaint);
+complaints.get(
+  "/track/:trackingTag",
+  validateWithZod(trackingTagSchemaForTrack),
+  trackComplaint,
+);
 
 // Manager, Admin, and Mukhtar can list complaints they are assigned to
 complaints.get(
@@ -32,6 +45,7 @@ complaints.get(
 complaints.get(
   "/:id",
   requireRoles(["manager", "admin", "mukhtar"]),
+  validateWithZod(complaintIdSchema),
   getComplaint,
 );
 
@@ -39,6 +53,8 @@ complaints.get(
 complaints.patch(
   "/:id/accept",
   requireRoles(["manager", "admin", "mukhtar"]),
+  validateWithZod(complaintIdSchema),
+  validateWithZod(solutionInfoSchemaForAccept),
   acceptComplaint,
 );
 
@@ -46,6 +62,8 @@ complaints.patch(
 complaints.patch(
   "/:id/refuse",
   requireRoles(["manager", "admin", "mukhtar"]),
+  validateWithZod(complaintIdSchema),
+  validateWithZod(refusalReasonSchemaForRefuse),
   refuseComplaint,
 );
 
@@ -53,6 +71,7 @@ complaints.patch(
 complaints.patch(
   "/:id",
   requireRoles(["manager", "admin", "mukhtar"]),
+  validateWithZod(updateComplaintSchema),
   updateComplaint,
 );
 
@@ -60,18 +79,21 @@ complaints.patch(
 complaints.delete(
   "/:id",
   requireRoles(["manager", "mukhtar"]),
+  validateWithZod(complaintIdSchema),
   deleteComplaint,
 );
 
 complaints.patch(
   "/:id/priority",
   requireRoles(["admin"]),
+  validateWithZod(complaintIdSchema),
   setComplaintPriority,
 );
 
 complaints.patch(
   "/:id/toggle-working-on",
   requireRoles(["admin"]),
+  validateWithZod(complaintIdSchema),
   toggleWorkingOn,
 );
 

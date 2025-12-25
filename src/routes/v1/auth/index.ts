@@ -2,19 +2,30 @@
 
 import express, { Router } from "express";
 import requireRoles from "../../../middleware/requireRoles";
+import { validateWithZod } from "../../../validation";
+import {
+  registerSchema,
+  loginSchema,
+  refreshTokenSchema,
+} from "../../../validation";
 // If you have a generic authentication middleware, you can import it here.
 // Example: import requireAuth from "../../../middleware/requireAuth";
 import { register, login, refresh, logout, getCurrentUser } from "./controller";
 
 const auth: Router = express.Router();
 
-auth.post("/register", requireRoles(["manager"]), register);
+auth.post(
+  "/register",
+  requireRoles(["manager"]),
+  validateWithZod(registerSchema),
+  register,
+);
 
 // Login
-auth.post("/login", login);
+auth.post("/login", validateWithZod(loginSchema), login);
 
 // Refresh
-auth.post("/refresh", refresh);
+auth.post("/refresh", validateWithZod(refreshTokenSchema), refresh);
 
 // Logout
 auth.post("/logout", logout);
