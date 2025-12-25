@@ -58,6 +58,11 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
+
+  // Indexes for User model
+  @@index([role, is_active]) // Common filtering by role and active status
+  @@index([neighborhood]) // For Mukhtar neighborhood assignments
+  @@index([email]) // Fast email lookups for authentication
 }
 
 // Refresh tokens for user sessions
@@ -70,6 +75,11 @@ model RefreshToken {
   createdAt DateTime @default(now())
   expiresAt DateTime
   user      User     @relation(fields: [userId], references: [id])
+
+  // Indexes for RefreshToken model
+  @@index([userId]) // Fast lookup by user
+  @@index([expiresAt]) // For cleanup of expired tokens
+  @@index([revoked, expiresAt]) // For finding active, non-revoked tokens
 }
 
 // Complaints submitted by website users (no account needed)
@@ -80,12 +90,12 @@ model complaints {
   description       String?
   location          String?
   mukhtarInitialId  String? // mukhtar who accepted (nullable)
-  complaint_type    String    
-  neighborhood      String    
+  complaint_type    String
+  neighborhood      String
   
   // --- NEW FIELDS ---
   priority          Priority? // Priority of the complaint: high, mid, low (set by admin later)
-  trackingTag       String    @unique // Unique tag for anonymous users to track their complaint
+  trackingTag       String    @unique(map: "complaints_tracking_tag_unique") // Unique tag for anonymous users to track their complaint
   estimatedReviewTime String? // Estimated time for review, e.g., "2-3 business days"
   notes             String?    // Internal notes from manager/admin/mukhtar
   
@@ -104,6 +114,30 @@ model complaints {
 
   handler User? @relation("MukhtarInitial", fields: [mukhtarInitialId], references: [id])
   workingOnBy User? @relation("WorkingOnBy", fields: [working_on_by], references: [id])
+
+  // Indexes for complaints model
+  @@index([complaint_status]) // Filter by status (pending, accepted, refused)
+  @@index([priority]) // Filter by priority (high, mid, low)
+  @@index([neighborhood]) // Filter complaints by neighborhood
+  @@index([complaint_type]) // Filter by complaint type
+  @@index([mukhtarInitialId]) // Filter complaints handled by specific mukhtar
+  @@index([working_on_by]) // Filter complaints being worked on by specific user
+  @@index([is_working_on]) // Filter complaints currently being worked on
+  @@index([createdAt]) // Sort by creation date
+  @@index([updatedAt]) // Sort by last update
+  @@index([deletedAt]) // For soft delete queries
+  
+  // Composite indexes for common query patterns
+  @@index([complaint_status, priority]) // Status and priority filtering
+  @@index([complaint_status, neighborhood]) // Status and neighborhood filtering
+  @@index([complaint_status, mukhtarInitialId]) // Status and handler filtering
+  @@index([priority, complaint_status]) // Priority and status filtering
+  @@index([neighborhood, complaint_status]) // Neighborhood and status filtering
+  @@index([createdAt, complaint_status]) // Date range and status filtering
+  @@index([updatedAt, complaint_status]) // Last update and status filtering
+  
+  // Unique constraints
+  @@unique([trackingTag], map: "complaints_tracking_tag_unique_idx") // Ensure tracking tags are unique
 }
 // Announcements created by managers and admins, visible to all users
 model Announcement {
@@ -117,6 +151,14 @@ model Announcement {
   // Foreign key to track which manager/admin created this announcement
   createdBy String?
   creator   User?        @relation(fields: [createdBy], references: [id])
+
+  // Indexes for Announcement model
+  @@index([status]) // Filter by status (active, inactive)
+  @@index([createdAt]) // Sort by creation date
+  @@index([updatedAt]) // Sort by last update
+  @@index([createdBy]) // Filter announcements by creator
+  @@index([status, createdAt]) // Status and date filtering
+  @@index([status, updatedAt]) // Status and last update filtering
 }
 
 // Achievements created by managers and admins, visible to all users
@@ -132,6 +174,14 @@ model Achievement {
   // Foreign key to track which manager/admin created this achievement
   createdBy   String?
   creator     User?        @relation(fields: [createdBy], references: [id])
+
+  // Indexes for Achievement model
+  @@index([status]) // Filter by status (active, inactive)
+  @@index([createdAt]) // Sort by creation date
+  @@index([updatedAt]) // Sort by last update
+  @@index([createdBy]) // Filter achievements by creator
+  @@index([status, createdAt]) // Status and date filtering
+  @@index([status, updatedAt]) // Status and last update filtering
 }
 
 // Initiatives submitted by public users, managed by managers and admins
@@ -147,4 +197,14 @@ model Initiative {
 
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+
+  // Indexes for Initiative model
+  @@index([status]) // Filter by status (pending, approved, rejected)
+  @@index([neighborhood]) // Filter by neighborhood
+  @@index([location]) // Filter by location
+  @@index([createdAt]) // Sort by creation date
+  @@index([updatedAt]) // Sort by last update
+  @@index([status, createdAt]) // Status and date filtering
+  @@index([status, neighborhood]) // Status and neighborhood filtering
+  @@index([neighborhood, status]) // Neighborhood and status filtering
 }
