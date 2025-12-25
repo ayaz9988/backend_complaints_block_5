@@ -21,12 +21,7 @@ import {
 const users = Router();
 
 // Get users by role - requires manager or admin role
-users.get(
-  "/",
-  requireRoles(["manager", "admin"]),
-  validateWithZod(getUsersByRoleSchema),
-  getUsersByRole,
-);
+users.get("/", requireRoles(["manager", "admin"]), getUsersByRole);
 
 // Get user by ID - requires manager or admin role
 users.get(

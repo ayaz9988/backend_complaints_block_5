@@ -221,7 +221,7 @@ describe("Users API", () => {
 
     it("should return 404 for non-existent user", async () => {
       await request(app)
-        .get("/v1/users/non-existent-id")
+        .get("/v1/users/00000000-0000-0000-0000-000000000000")
         .set("Authorization", `Bearer ${managerToken}`)
         .expect(404);
     });
@@ -347,7 +347,7 @@ describe("Users API", () => {
 
     it("should return 404 when trying to update a non-existent user", async () => {
       await request(app)
-        .patch("/v1/users/non-existent-id")
+        .patch("/v1/users/00000000-0000-0000-0000-000000000000")
         .set("Authorization", `Bearer ${managerToken}`)
         .send({ name: "Updated Name" })
         .expect(404);
@@ -405,7 +405,7 @@ describe("Users API", () => {
 
     it("should return 404 when trying to deactivate a non-existent user", async () => {
       await request(app)
-        .patch("/v1/users/non-existent-id/deactivate")
+        .patch("/v1/users/00000000-0000-0000-0000-000000000000/deactivate")
         .set("Authorization", `Bearer ${managerToken}`)
         .expect(404);
     });
@@ -460,7 +460,7 @@ describe("Users API", () => {
 
     it("should return 404 when trying to delete a non-existent user", async () => {
       await request(app)
-        .delete("/v1/users/non-existent-id")
+        .delete("/v1/users/00000000-0000-0000-0000-000000000000")
         .set("Authorization", `Bearer ${managerToken}`)
         .expect(404);
     });
