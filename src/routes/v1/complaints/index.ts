@@ -21,15 +21,22 @@ import {
   solutionInfoSchemaForAccept,
   refusalReasonSchemaForRefuse,
 } from "../../../validation";
+import { anonymousCombinedRateLimiter } from "../../../middleware/rateLimiter";
 
 const complaints = express.Router();
 
-// Anyone can create a complaint
-complaints.post("/", validateWithZod(createComplaintSchema), createComplaint);
+// Anyone can create a complaint - Apply rate limiting for anonymous users
+complaints.post(
+  "/",
+  anonymousCombinedRateLimiter,
+  validateWithZod(createComplaintSchema),
+  createComplaint,
+);
 
-// NEW: Public endpoint for anyone to track a complaint by its tag
+// NEW: Public endpoint for anyone to track a complaint by its tag - Apply rate limiting for anonymous users
 complaints.get(
   "/track/:trackingTag",
+  anonymousCombinedRateLimiter,
   validateWithZod(trackingTagSchemaForTrack),
   trackComplaint,
 );

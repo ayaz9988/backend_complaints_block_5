@@ -8,6 +8,7 @@ import {
   loginSchema,
   refreshTokenSchema,
 } from "../../../validation";
+import { anonymousCombinedRateLimiter } from "../../../middleware/rateLimiter";
 // If you have a generic authentication middleware, you can import it here.
 // Example: import requireAuth from "../../../middleware/requireAuth";
 import { register, login, refresh, logout, getCurrentUser } from "./controller";
@@ -21,8 +22,13 @@ auth.post(
   register,
 );
 
-// Login
-auth.post("/login", validateWithZod(loginSchema), login);
+// Login - Apply rate limiting for anonymous users
+auth.post(
+  "/login",
+  anonymousCombinedRateLimiter,
+  validateWithZod(loginSchema),
+  login,
+);
 
 // Refresh
 auth.post("/refresh", validateWithZod(refreshTokenSchema), refresh);
