@@ -27,6 +27,7 @@ The indexing strategy focuses on the most common query patterns in the applicati
 - `@@index([revoked, expiresAt])` - Active, non-revoked token queries
 
 ### Complaints Model (Main Entity)
+
 **Single Field Indexes:**
 
 - `@@index([complaint_status])` - Filter by status (pending, accepted, refused)
@@ -89,19 +90,19 @@ The indexing strategy focuses on the most common query patterns in the applicati
 
 ```sql
 -- Manager/Admin dashboard: All complaints by status and priority
-SELECT * FROM complaints 
-WHERE complaint_status = 'pending' 
+SELECT * FROM complaints
+WHERE complaint_status = 'pending'
 ORDER BY priority DESC, createdAt DESC;
 
 -- Mukhtar dashboard: Complaints assigned to specific mukhtar
-SELECT * FROM complaints 
-WHERE mukhtarInitialId = 'user-id' 
+SELECT * FROM complaints
+WHERE mukhtarInitialId = 'user-id'
 AND complaint_status = 'accepted'
 ORDER BY updatedAt DESC;
 
 -- Neighborhood view: All complaints in specific neighborhood
-SELECT * FROM complaints 
-WHERE neighborhood = 'Al-Midan' 
+SELECT * FROM complaints
+WHERE neighborhood = 'Al-Midan'
 AND complaint_status IN ('pending', 'accepted')
 ORDER BY createdAt DESC;
 ```
@@ -110,14 +111,14 @@ ORDER BY createdAt DESC;
 
 ```sql
 -- Get all high-priority pending complaints
-SELECT * FROM complaints 
-WHERE complaint_status = 'pending' 
+SELECT * FROM complaints
+WHERE complaint_status = 'pending'
 AND priority = 'high'
 ORDER BY createdAt;
 
 -- Get all complaints currently being worked on
-SELECT * FROM complaints 
-WHERE is_working_on = true 
+SELECT * FROM complaints
+WHERE is_working_on = true
 AND working_on_by = 'user-id';
 ```
 
@@ -125,12 +126,12 @@ AND working_on_by = 'user-id';
 
 ```sql
 -- Get complaints created in the last 30 days
-SELECT * FROM complaints 
+SELECT * FROM complaints
 WHERE createdAt >= NOW() - INTERVAL '30 days'
 ORDER BY createdAt DESC;
 
 -- Get recently updated complaints
-SELECT * FROM complaints 
+SELECT * FROM complaints
 WHERE updatedAt >= NOW() - INTERVAL '7 days'
 ORDER BY updatedAt DESC;
 ```
@@ -139,12 +140,12 @@ ORDER BY updatedAt DESC;
 
 ```sql
 -- Get all active users by role
-SELECT * FROM User 
-WHERE role = 'mukhtar' 
+SELECT * FROM User
+WHERE role = 'mukhtar'
 AND is_active = true;
 
 -- Get all announcements visible to users
-SELECT * FROM Announcement 
+SELECT * FROM Announcement
 WHERE status = 'active'
 ORDER BY createdAt DESC;
 ```
@@ -162,29 +163,30 @@ ORDER BY createdAt DESC;
 
 ```sql
 -- Check index usage statistics
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,
     idx_tup_read,
     idx_tup_fetch
-FROM pg_stat_user_indexes 
+FROM pg_stat_user_indexes
 WHERE tablename IN ('complaints', 'User', 'Announcement', 'Achievement', 'Initiative')
 ORDER BY idx_tup_read DESC;
 
 -- Check table sizes with and without indexes
-SELECT 
+SELECT
     tablename,
     pg_size_pretty(pg_total_relation_size(tablename::regclass)) as total_size,
     pg_size_pretty(pg_relation_size(tablename::regclass)) as table_size,
     pg_size_pretty(pg_total_relation_size(tablename::regclass) - pg_relation_size(tablename::regclass)) as index_size
-FROM pg_tables 
+FROM pg_tables
 WHERE tablename IN ('complaints', 'User', 'Announcement', 'Achievement', 'Initiative');
 ```
 
 ## Maintenance Recommendations
 
 ### 1. Regular Index Rebuilding
+
 ```sql
 -- Rebuild indexes periodically (monthly recommended)
 REINDEX TABLE complaints;

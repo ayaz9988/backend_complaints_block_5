@@ -10,7 +10,8 @@
     "lint": "eslint --fix",
     "seed:admin": "dotenv -e .env -- pnpm exec ts-node src/scripts/seed.ts",
     "start": "node dist/index.js",
-    "format": "pnpm prettier --write"
+    "format": "pnpm prettier --write",
+    "test:indexes": "dotenv -e .env --  pnpm exec ts-node src/scripts/test-indexes.ts"
   },
   "keywords": [],
   "author": "",
