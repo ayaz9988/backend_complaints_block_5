@@ -14,6 +14,12 @@ This document outlines the REST API endpoints for managing announcements, achiev
 - [Error Handling](#error-handling)
 - [Security Considerations](#security-considerations)
 
+## Related Documentation
+
+- [README](README.md) - Project overview, setup instructions, and quick start guide
+- [Database Indexing Strategy](INDEXING_STRATEGY.md) - Database optimization and indexing approach
+- [Validation System](VALIDATION.md) - Input validation and sanitization documentation
+
 ---
 
 ## Base URL
@@ -834,11 +840,25 @@ For validation errors, the response may include additional details:
 | `403`       | Forbidden - Insufficient permissions                  |
 | `404`       | Not Found - Resource not found                        |
 | `409`       | Conflict - Resource already exists                    |
+| `429`       | Too Many Requests - Rate limit exceeded               |
 | `500`       | Internal Server Error - Server error                  |
 
 ---
 
 ## Security Considerations
+
+### Rate Limiting
+
+The API implements rate limiting to protect against abuse and ensure fair usage:
+
+- **Anonymous Users**: Limited to 1 request per hour and 5 requests per day
+- **Authenticated Users**: No rate limits applied
+- **Affected Endpoints**:
+  - Authentication endpoints (`/v1/auth/login`, `/v1/auth/register`)
+  - Complaint submission (`/v1/complaints`)
+  - Complaint tracking (`/v1/complaints/track/:trackingTag`)
+- **Response Headers**: Include rate limit information (`RateLimit-*` headers)
+- **Error Response**: Returns `429 Too Many Requests` with retry information
 
 ### Token Storage
 
@@ -938,3 +958,11 @@ localStorage.setItem("accessToken", newAccessToken);
 | `manager` | Can view all high priority complaints (including deleted), hard delete complaints         |
 | `admin`   | Can view and manage mid priority complaints                                               |
 | `mukhtar` | Can view and manage low priority complaints in their neighborhood, soft delete complaints |
+
+## Additional Resources
+
+For more detailed information about the system architecture and implementation:
+
+- [Database Indexing Strategy](INDEXING_STRATEGY.md) - Learn about our database optimization strategies and indexing approach
+- [Validation System](VALIDATION.md) - Understand our input validation and sanitization mechanisms
+- [README](README.md) - Project setup, configuration, and deployment instructions

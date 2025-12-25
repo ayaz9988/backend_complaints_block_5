@@ -12,6 +12,12 @@ The indexing strategy focuses on the most common query patterns in the applicati
 4. **Relationship queries** - Foreign key lookups and joins
 5. **Neighborhood filtering** - Geographic-based queries for Mukhtar assignments
 
+## Related Documentation
+
+- [API Documentation](DOCUMENTATION.md) - See how these indexes optimize the API endpoints
+- [README](README.md) - Project overview and setup instructions
+- [Validation System](VALIDATION.md) - Input validation that works with our database structure
+
 ## Indexes by Model
 
 ### User Model
@@ -231,5 +237,13 @@ After applying the migration, test the following scenarios:
 2. **Query Analysis**: Use EXPLAIN ANALYZE on critical queries
 3. **Index Verification**: Confirm indexes are being used
 4. **Performance Baseline**: Measure before and after performance
+
+## Integration with System Components
+
+These indexes work in conjunction with:
+
+- **API Endpoints** ([DOCUMENTATION.md](DOCUMENTATION.md)) - Optimized queries for dashboard and management operations
+- **Validation System** ([VALIDATION.md](VALIDATION.md)) - Ensures data integrity that supports efficient indexing
+- **Database Schema** ([Prisma Schema](prisma/schema.prisma)) - The foundation for our indexing strategy
 
 This indexing strategy should significantly improve query performance for the most common operations in the complaint management system while maintaining reasonable write performance.

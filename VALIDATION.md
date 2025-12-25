@@ -13,6 +13,12 @@ The validation system provides:
 - **Middleware integration** for easy use in Express routes
 - **Reusable validation schemas** for common data types
 
+## Related Documentation
+
+- [API Documentation](DOCUMENTATION.md) - See how validation integrates with API endpoints
+- [Database Indexing Strategy](INDEXING_STRATEGY.md) - How validation supports database optimization
+- [README](README.md) - Project setup and configuration
+
 ## Architecture
 
 ### Core Files
@@ -362,5 +368,14 @@ For questions or issues with the validation system:
 
 1. Check the test files for usage examples
 2. Review the schema definitions in `src/validation/index.ts`
-3. Consult the Zod documentation: https://zod.dev/
+3. Consult the Zod documentation: <https://zod.dev/>
 4. Ask the development team for assistance
+
+## Integration with System Components
+
+The validation system works closely with:
+
+- **API Endpoints** ([DOCUMENTATION.md](DOCUMENTATION.md)) - Provides input validation for all API routes
+- **Rate Limiting** - Works alongside rate limiting to provide comprehensive API protection
+- **Database Schema** ([Prisma Schema](prisma/schema.prisma)) - Ensures data integrity before database operations
+- **Database Indexing** ([INDEXING_STRATEGY.md](INDEXING_STRATEGY.md)) - Clean, validated data supports efficient indexing

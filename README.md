@@ -11,6 +11,7 @@ A Node.js and Express backend for managing complaints, built with TypeScript and
 - **ORM:** Prisma
 - **Testing suite:** jest && supertest
 - **Authentication:** JWT (JSON Web Tokens)
+- **Security:** Rate limiting, input validation, and sanitization
 
 ## Option 1: Docker (Recommended)
 
@@ -194,6 +195,12 @@ npm run test
 ## API Documentation
 
 You can explore and test the API endpoints using the `api_test.http` file with the [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) extension in Visual Studio Code.
+
+## Documentation
+
+- [API Documentation](DOCUMENTATION.md) - Comprehensive API reference with endpoints, authentication, and examples
+- [Database Indexing Strategy](INDEXING_STRATEGY.md) - Database optimization and indexing approach
+- [Validation System](VALIDATION.md) - Input validation and sanitization documentation
 
 ## License
 
