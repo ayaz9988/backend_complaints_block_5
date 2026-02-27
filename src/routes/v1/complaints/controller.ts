@@ -99,6 +99,7 @@ export async function createComplaint(req: Request, res: Response) {
         submitterName,
         contactNumber,
         description,
+        priority: "mid",
         location,
         neighborhood,
         complaint_type,

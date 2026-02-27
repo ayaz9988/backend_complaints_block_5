@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Request, Response, NextFunction } from "express";
+import { Priority } from "@prisma/client";
 
 // Common validation schemas
 export const emailSchema = z
