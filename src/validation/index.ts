@@ -234,7 +234,22 @@ export const achievementIdSchema = z.object({
 
 export const initiativeIdSchema = z.object({
   params: z.object({
-    id: bigintSchema,
+    id: uuidSchema,
+  }),
+});
+
+export const approveInitiativeSchema = z.object({
+  params: z.object({
+    id: uuidSchema,
+  }),
+});
+
+export const rejectInitiativeSchema = z.object({
+  params: z.object({
+    id: uuidSchema,
+  }),
+  body: z.object({
+    rejectionReason: refusalReasonSchema,
   }),
 });
 

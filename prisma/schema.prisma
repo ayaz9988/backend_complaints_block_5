@@ -186,10 +186,11 @@ model Achievement {
 
 // Initiatives submitted by public users, managed by managers and admins
 model Initiative {
-  id          BigInt          @id @default(autoincrement())
+  id          String          @id @default(uuid())
   title       String
   description String
   status      InitiativeStatus @default(pending)
+  rejectionReason String?      // Reason for rejection when status is 'rejected'
   submitterName String?       // Optional name of submitter
   contactNumber String?       // Optional contact info
   location    String?         // Optional location

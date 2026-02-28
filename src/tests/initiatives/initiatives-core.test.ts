@@ -79,7 +79,7 @@ describe("Initiatives API", () => {
       },
     });
 
-    testInitiativeId = testInitiative.id.toString();
+    testInitiativeId = testInitiative.id;
   });
 
   describe("POST /initiatives", () => {
@@ -289,7 +289,7 @@ describe("Initiatives API", () => {
         },
       });
 
-      const initiativeId = testInitiative.id.toString();
+      const initiativeId = testInitiative.id;
 
       await request(app)
         .delete(`/v1/initiatives/${initiativeId}`)
@@ -298,7 +298,7 @@ describe("Initiatives API", () => {
 
       // Verify the initiative is actually deleted
       const deletedInitiative = await prisma.initiative.findUnique({
-        where: { id: BigInt(initiativeId) },
+        where: { id: initiativeId },
       });
 
       expect(deletedInitiative).toBeNull();
@@ -313,7 +313,7 @@ describe("Initiatives API", () => {
         },
       });
 
-      const initiativeId = testInitiative.id.toString();
+      const initiativeId = testInitiative.id;
 
       await request(app)
         .delete(`/v1/initiatives/${initiativeId}`)
@@ -322,7 +322,7 @@ describe("Initiatives API", () => {
 
       // Verify the initiative is actually deleted
       const deletedInitiative = await prisma.initiative.findUnique({
-        where: { id: BigInt(initiativeId) },
+        where: { id: initiativeId },
       });
 
       expect(deletedInitiative).toBeNull();

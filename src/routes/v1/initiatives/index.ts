@@ -5,6 +5,8 @@ import {
   getInitiative,
   updateInitiative,
   deleteInitiative,
+  approveInitiative,
+  rejectInitiative,
 } from "./controller";
 import requireRoles from "../../../middleware/requireRoles";
 import { validateWithZod } from "../../../validation";
@@ -12,6 +14,8 @@ import {
   createInitiativeSchema,
   updateInitiativeSchema,
   initiativeIdSchema,
+  approveInitiativeSchema,
+  rejectInitiativeSchema,
 } from "../../../validation";
 import { anonymousCombinedRateLimiter } from "../../../middleware/rateLimiter";
 
@@ -47,6 +51,22 @@ initiatives.delete(
   requireRoles(["manager", "admin"]),
   validateWithZod(initiativeIdSchema),
   deleteInitiative,
+);
+
+// Approve initiative endpoint
+initiatives.put(
+  "/:id/approve",
+  requireRoles(["manager", "admin"]),
+  validateWithZod(approveInitiativeSchema),
+  approveInitiative,
+);
+
+// Reject initiative endpoint
+initiatives.put(
+  "/:id/reject",
+  requireRoles(["manager", "admin"]),
+  validateWithZod(rejectInitiativeSchema),
+  rejectInitiative,
 );
 
 export default initiatives;
