@@ -60,9 +60,27 @@ The system includes pre-built schemas for common data types:
 - `createComplaintSchema` - Complaint creation validation
 - `updateComplaintSchema` - Complaint update validation
 - `createAnnouncementSchema` - Announcement creation validation
+- `updateAnnouncementSchema` - Announcement update validation
 - `createAchievementSchema` - Achievement creation validation
+- `updateAchievementSchema` - Achievement update validation
 - `createInitiativeSchema` - Initiative creation validation
-- And many more...
+- `updateInitiativeSchema` - Initiative update validation
+- `solutionInfoSchemaForAccept` - Solution info for accepting complaints
+- `refusalReasonSchemaForRefuse` - Refusal reason for rejecting complaints
+- `rejectInitiativeSchema` - Rejection reason for rejecting initiatives
+- `approveInitiativeSchema` - Approval validation for initiatives
+- `complaintIdSchema` - Complaint ID parameter validation
+- `announcementIdSchema` - Announcement ID parameter validation
+- `achievementIdSchema` - Achievement ID parameter validation
+- `initiativeIdSchema` - Initiative ID parameter validation
+- `userIdSchema` - User ID parameter validation
+- `trackingTagSchemaForTrack` - Tracking tag parameter validation
+- `getUserByIdSchema` - Get user by ID validation
+- `updateUserSchema` - User update validation
+- `deactivateUserSchema` - User deactivation validation
+- `deleteUserSchema` - User deletion validation
+- `getUsersByRoleSchema` - Get users by role query validation
+- `getUserComplaintsSchema` - Get user complaints validation
 
 ## Usage
 
@@ -284,6 +302,31 @@ type ComplaintData = z.infer<typeof createComplaintSchema>;
 
 export const createComplaint = async (req: Request, res: Response) => {
   const data: ComplaintData = req.body;
+  // TypeScript ensures type safety
+};
+```
+
+## Type Exports
+
+The validation system exports TypeScript types for all request schemas:
+
+```typescript
+import type { RegisterData } from "./validation";
+import type { LoginData } from "./validation";
+import type { CreateComplaintData } from "./validation";
+import type { UpdateComplaintData } from "./validation";
+import type { CreateAnnouncementData } from "./validation";
+import type { CreateAchievementData } from "./validation";
+import type { CreateInitiativeData } from "./validation";
+import type { UpdateInitiativeData } from "./validation";
+import type { UpdateUserData } from "./validation";
+```
+
+These types can be used in controllers for type-safe access to validated data:
+
+```typescript
+export const createComplaint = async (req: Request, res: Response) => {
+  const data: CreateComplaintData = req.body;
   // TypeScript ensures type safety
 };
 ```

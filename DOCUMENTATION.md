@@ -500,10 +500,11 @@ Create a new initiative (public endpoint with rate limiting).
 
   ```json
   {
-    "id": "123",
+    "id": "uuid-string",
     "title": "Community Garden Initiative",
     "description": "Create a community garden in the neighborhood",
     "status": "pending",
+    "rejectionReason": null,
     "submitterName": "John Doe",
     "contactNumber": "1234567890",
     "location": "Central Park",
@@ -529,7 +530,7 @@ Get details of a specific initiative.
 
 - **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
 - **URL Parameters:**
-  - `id` (string, required): The ID of the initiative.
+  - `id` (string, required): The UUID of the initiative.
 - **Validation:** Request parameters are validated using Zod schema.
 - **Success Response (200 OK):** Returns the initiative object.
 - **Error Responses:** `400`, `401`, `403`, `404`, `500`.
@@ -540,7 +541,7 @@ Update an initiative.
 
 - **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
 - **URL Parameters:**
-  - `id` (string, required): The ID of the initiative.
+  - `id` (string, required): The UUID of the initiative.
 - **Validation:** Request parameters and body are validated using Zod schemas.
 - **Request Body (JSON):** Provide only the fields you want to update.
 
@@ -559,13 +560,41 @@ Update an initiative.
 - **Success Response (200 OK):** Returns the updated initiative object.
 - **Error Responses:** `400`, `401`, `403`, `404`, `500`.
 
+### `PUT /v1/initiatives/:id/approve`
+
+Approve an initiative.
+
+- **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
+- **URL Parameters:**
+  - `id` (string, required): The UUID of the initiative.
+- **Success Response (200 OK):** Returns the updated initiative object with status "approved".
+- **Error Responses:** `400`, `401`, `403`, `404`, `500`.
+
+### `PUT /v1/initiatives/:id/reject`
+
+Reject an initiative with a reason.
+
+- **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
+- **URL Parameters:**
+  - `id` (string, required): The UUID of the initiative.
+- **Request Body (JSON):**
+
+  ```json
+  {
+    "rejectionReason": "string (required, min 10 characters)"
+  }
+  ```
+
+- **Success Response (200 OK):** Returns the updated initiative object with status "rejected" and the rejection reason.
+- **Error Responses:** `400`, `401`, `403`, `404`, `500`.
+
 ### `DELETE /v1/initiatives/:id`
 
 Delete an initiative.
 
 - **Authorization:** Required (`Bearer` token with `manager` or `admin` role).
 - **URL Parameters:**
-  - `id` (string, required): The ID of the initiative to delete.
+  - `id` (string, required): The UUID of the initiative to delete.
 - **Validation:** Request parameters are validated using Zod schema.
 - **Success Response (200 OK):**
 
@@ -806,6 +835,32 @@ Logout a user and invalidate their refresh token.
 - **Status Codes**:
   - `200` (OK)
   - `401` (Unauthorized)
+
+### `GET /v1/auth/current`
+
+Get the currently authenticated user's information.
+
+- **Method**: `GET`
+- **Path**: `/v1/auth/current`
+- **Description**: Returns the current user's profile information based on their JWT token
+- **Authentication**: Bearer token required
+- **Request Body**: None
+- **Response**:
+
+  ```json
+  {
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "User Name",
+    "role": "admin",
+    "is_active": true,
+    "neighborhood": null
+  }
+  ```
+
+- **Status Codes**:
+  - `200` (OK)
+  - `401` (Unauthorized - invalid or missing token)
 
 ---
 

@@ -90,6 +90,8 @@ The indexing strategy focuses on the most common query patterns in the applicati
 - `@@index([status, neighborhood])` - Status and neighborhood filtering
 - `@@index([neighborhood, status])` - Neighborhood and status filtering
 
+**Note:** The `rejectionReason` field is not indexed as it is primarily set when status is 'rejected' and is accessed via the initiative record itself.
+
 ## Query Performance Examples
 
 ### 1. Dashboard Queries (Most Critical)
