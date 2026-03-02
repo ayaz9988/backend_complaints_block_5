@@ -175,6 +175,7 @@ Deletes an announcement. Access is restricted to `admin` and `manager` roles.
 Creates a new achievement. Access is restricted to `admin` and `manager` roles.
 
 - **Authorization:** Required (`Bearer` token with `admin` or `manager` role).
+- **Content-Type:** `multipart/form-data` (for media upload) or `application/json`
 - **Request Body (JSON):**
 
   ```json
@@ -186,6 +187,12 @@ Creates a new achievement. Access is restricted to `admin` and `manager` roles.
   }
   ```
 
+- **Request Body (multipart/form-data):**
+  - All JSON fields as form fields
+  - Optional `media` field: Image or video file
+    - **Allowed image types:** JPEG, PNG, GIF, WebP (max 5MB)
+    - **Allowed video types:** MP4, WebM, OGG, QuickTime (max 10MB)
+
 - **Success Response (201 Created):** Returns the full achievement object that was created.
 
   ```json
@@ -194,6 +201,8 @@ Creates a new achievement. Access is restricted to `admin` and `manager` roles.
     "title": "First Achievement",
     "description": "Awarded for completing the onboarding.",
     "iconUrl": "http://example.com/icon.png",
+    "mediaUrl": "/uploads/filename.jpg",
+    "mediaType": "image",
     "status": "active",
     "createdAt": "2023-10-27T10:00:00.000Z",
     "updatedAt": "2023-10-27T10:00:00.000Z",
@@ -277,9 +286,11 @@ Deletes an achievement. Access is restricted to `admin` and `manager` roles.
 
 ### `POST /v1/complaints`
 
-Create a new complaint (public endpoint).
+Create a new complaint (public endpoint with optional media upload).
 
 - **Authorization:** None (public).
+- **Rate Limiting:** Anonymous users are limited to 1 request per hour and 5 requests per day.
+- **Content-Type:** `multipart/form-data` (for media upload) or `application/json`
 - **Request Body (JSON):**
 
   ```json
@@ -295,7 +306,13 @@ Create a new complaint (public endpoint).
   }
   ```
 
-- **Success Response (201 Created):** Returns the full complaint object, including a unique `trackingTag`.
+- **Request Body (multipart/form-data):**
+  - All JSON fields as form fields
+  - Optional `media` field: Image or video file
+    - **Allowed image types:** JPEG, PNG, GIF, WebP (max 5MB)
+    - **Allowed video types:** MP4, WebM, OGG, QuickTime (max 10MB)
+
+- **Success Response (201 Created):** Returns the full complaint object, including a unique `trackingTag` and optional media.
 
   ```json
   {
@@ -314,6 +331,8 @@ Create a new complaint (public endpoint).
     "refusalReason": null,
     "suggestedSolution": "Suggested solution",
     "notes": null,
+    "mediaUrl": "/uploads/filename.jpg",
+    "mediaType": "image",
     "deletedAt": null,
     "createdAt": "2023-01-01T00:00:00.000Z",
     "updatedAt": "2023-01-01T00:00:00.000Z"
@@ -479,10 +498,11 @@ Delete a complaint.
 
 ### `POST /v1/initiatives`
 
-Create a new initiative (public endpoint with rate limiting).
+Create a new initiative (public endpoint with rate limiting and optional media upload).
 
 - **Authorization:** None (public).
 - **Rate Limiting:** Anonymous users are limited to 1 request per hour and 5 requests per day.
+- **Content-Type:** `multipart/form-data` (for media upload) or `application/json`
 - **Request Body (JSON):**
 
   ```json
@@ -495,6 +515,12 @@ Create a new initiative (public endpoint with rate limiting).
     "neighborhood": "string (optional)"
   }
   ```
+
+- **Request Body (multipart/form-data):**
+  - All JSON fields as form fields
+  - Optional `media` field: Image or video file
+    - **Allowed image types:** JPEG, PNG, GIF, WebP (max 5MB)
+    - **Allowed video types:** MP4, WebM, OGG, QuickTime (max 10MB)
 
 - **Success Response (201 Created):** Returns the full initiative object.
 
@@ -509,6 +535,8 @@ Create a new initiative (public endpoint with rate limiting).
     "contactNumber": "1234567890",
     "location": "Central Park",
     "neighborhood": "Downtown",
+    "mediaUrl": "/uploads/filename.jpg",
+    "mediaType": "image",
     "createdAt": "2023-01-01T00:00:00.000Z",
     "updatedAt": "2023-01-01T00:00:00.000Z"
   }
@@ -929,6 +957,30 @@ The API implements rate limiting to protect against abuse and ensure fair usage:
 - **Response Headers**: Include rate limit information (`RateLimit-*` headers)
 - **Error Response**: Returns `429 Too Many Requests` with retry information
 
+### File Uploads
+
+The API supports file uploads for complaints, initiatives, and achievements:
+
+- **Endpoint**: Use `multipart/form-data` content type
+- **Field Name**: `media`
+- **Allowed File Types**:
+  - **Images**: JPEG, PNG, GIF, WebP (max 5MB)
+  - **Videos**: MP4, WebM, OGG, QuickTime (max 10MB)
+- **Upload Directory**: Files are stored in the `/uploads` directory
+- **Response**: Returns the file URL (`mediaUrl`) and media type (`mediaType`)
+
+#### Example: Upload with cURL
+
+```bash
+curl -X POST http://localhost:3000/v1/complaints \
+  -H "Authorization: Bearer <token>" \
+  -F "contactNumber=1234567890" \
+  -F "description=Description of complaint" \
+  -F "neighborhood=Downtown" \
+  -F "complaint_type=infrastructure" \
+  -F "media=@/path/to/image.jpg"
+```
+
 ### Token Storage
 
 1. **Access Token**:
@@ -1027,6 +1079,13 @@ localStorage.setItem("accessToken", newAccessToken);
 | `manager` | Can view all high priority complaints (including deleted), hard delete complaints         |
 | `admin`   | Can view and manage mid priority complaints                                               |
 | `mukhtar` | Can view and manage low priority complaints in their neighborhood, soft delete complaints |
+
+### Media Types
+
+| Media Type | Description                          |
+| ---------- | ------------------------------------ |
+| `image`    | Image files (JPEG, PNG, GIF, WebP)  |
+| `video`    | Video files (MP4, WebM, OGG)         |
 
 ## Additional Resources
 

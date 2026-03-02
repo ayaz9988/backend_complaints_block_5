@@ -61,6 +61,10 @@ The indexing strategy focuses on the most common query patterns in the applicati
 
 - `@@unique([trackingTag], map: "complaints_tracking_tag_unique_idx")` - Ensure tracking tags are unique
 
+**Media Fields:**
+- `mediaUrl` - Optional URL to media (image or video)
+- `mediaType` - Type of media: 'image' or 'video'
+
 ### Announcement Model
 
 - `@@index([status])` - Filter by status (active, inactive)
@@ -79,6 +83,10 @@ The indexing strategy focuses on the most common query patterns in the applicati
 - `@@index([status, createdAt])` - Status and date filtering
 - `@@index([status, updatedAt])` - Status and last update filtering
 
+**Media Fields:**
+- `mediaUrl` - Optional URL to media (image or video)
+- `mediaType` - Type of media: 'image' or 'video'
+
 ### Initiative Model
 
 - `@@index([status])` - Filter by status (pending, approved, rejected)
@@ -91,6 +99,10 @@ The indexing strategy focuses on the most common query patterns in the applicati
 - `@@index([neighborhood, status])` - Neighborhood and status filtering
 
 **Note:** The `rejectionReason` field is not indexed as it is primarily set when status is 'rejected' and is accessed via the initiative record itself.
+
+**Media Fields:**
+- `mediaUrl` - Optional URL to media (image or video)
+- `mediaType` - Type of media: 'image' or 'video'
 
 ## Query Performance Examples
 

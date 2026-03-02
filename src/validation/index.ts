@@ -140,6 +140,12 @@ export const urlSchema = z
   )
   .transform((url: string) => url.trim());
 
+export const mediaTypeSchema = z.enum(["image", "video"], {
+  errorMap: () => ({
+    message: "Invalid media type. Must be one of: image, video",
+  }),
+});
+
 // Request validation schemas
 
 // Auth schemas

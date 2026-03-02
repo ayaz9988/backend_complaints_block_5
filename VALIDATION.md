@@ -51,6 +51,7 @@ The system includes pre-built schemas for common data types:
 - `titleSchema` - Validates titles
 - `contentSchema` - Validates content fields
 - `urlSchema` - Validates URLs
+- `mediaTypeSchema` - Validates media types (image, video)
 
 #### Request Schemas
 
@@ -140,6 +141,23 @@ All schemas automatically sanitize input:
 - **Remove invalid characters** from phone numbers
 - **Normalize UUIDs** to lowercase
 - **Validate and clean URLs**
+
+### File Upload Validation
+
+The system supports file uploads for complaints, initiatives, and achievements using Multer middleware:
+
+- **Field Name**: `media`
+- **File Types**:
+  - **Images**: JPEG, PNG, GIF, WebP
+  - **Videos**: MP4, WebM, OGG, QuickTime
+- **Size Limits**:
+  - Images: 5MB maximum
+  - Videos: 10MB maximum
+- **Validation**: Handled by Multer middleware in route definitions
+- **Error Messages**:
+  - `"Invalid file type. Only images and videos are allowed."`
+  - `"Image size exceeds the limit of 5MB"`
+  - `"Video size exceeds the limit of 10MB"`
 
 ### Error Handling
 
