@@ -6,6 +6,7 @@ import announcements from "./announcements";
 import achievements from "./achievements";
 import users from "./users";
 import initiatives from "./initiatives";
+import uploads from "./uploads";
 
 const v1: Router = express.Router();
 
@@ -15,5 +16,6 @@ v1.use("/announcements", announcements);
 v1.use("/achievements", achievements);
 v1.use("/users", users);
 v1.use("/initiatives", initiatives);
+v1.use("/uploads", uploads);
 
 export default v1;
