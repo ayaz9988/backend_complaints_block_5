@@ -9,6 +9,10 @@ const config = {
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || "localhost",
   COOKIE_NAME: "refresh_token",
   isProd: process.env.NODE_ENV === "production",
+  // File upload configuration
+  uploadDir: process.env.UPLOAD_DIR || "uploads",
+  maxImageSize: 5 * 1024 * 1024, // 5MB for images
+  maxVideoSize: 10 * 1024 * 1024, // 10MB for videos
 };
 
 export default config;

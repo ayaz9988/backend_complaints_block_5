@@ -4,6 +4,8 @@ import { Express } from "express";
 import { createTestUser, loginUser, UserRole } from "../helpers";
 import { createServer } from "../../server";
 import prisma from "../../prisma";
+import path from "path";
+import fs from "fs";
 
 const app = createServer();
 
@@ -116,7 +118,7 @@ describe("Complaints API", () => {
       expect(response.body).toHaveProperty("trackingTag");
       expect(response.body.submitterName).toBe(complaintData.submitterName);
       expect(response.body.complaint_status).toBe("pending");
-      expect(response.body.priority).toBeNull();
+      expect(response.body.priority).toBe("mid");
       expect(response.body.estimatedReviewTime).toBeNull();
     });
 
@@ -135,7 +137,7 @@ describe("Complaints API", () => {
         .send(complaintData)
         .expect(201);
 
-      expect(response.body.priority).toBeNull();
+      expect(response.body.priority).toBe("mid");
       expect(response.body.estimatedReviewTime).toBeNull();
     });
 
@@ -163,7 +165,7 @@ describe("Complaints API", () => {
       expect(response.body.suggestedSolution).toBe(
         complaintData.suggestedSolution,
       );
-      expect(response.body.priority).toBeNull();
+      expect(response.body.priority).toBe("mid");
       expect(response.body.estimatedReviewTime).toBeNull();
     });
 
@@ -188,7 +190,7 @@ describe("Complaints API", () => {
       expect(response.body.submitterName).toBe(complaintData.submitterName);
       expect(response.body.complaint_status).toBe("pending");
       expect(response.body.suggestedSolution).toBeNull();
-      expect(response.body.priority).toBeNull();
+      expect(response.body.priority).toBe("mid");
       expect(response.body.estimatedReviewTime).toBeNull();
     });
   });
@@ -667,6 +669,123 @@ describe("Complaints API", () => {
         .patch("/v1/complaints/999999/toggle-working-on")
         .set("Authorization", `Bearer ${adminToken}`)
         .expect(404);
+    });
+  });
+
+  describe("POST /complaints with media", () => {
+    it("should create a complaint with an image", async () => {
+      // Create a small test image (1x1 transparent PNG)
+      const testImagePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "test-complaint-image.png",
+      );
+      const buffer = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      );
+      fs.writeFileSync(testImagePath, buffer);
+
+      const response = await request(app)
+        .post("/v1/complaints")
+        .attach("media", testImagePath)
+        .field("submitterName", "John Doe")
+        .field("contactNumber", "9876543210")
+        .field("description", "Complaint with image")
+        .field("location", "123 Main St")
+        .field("neighborhood", "Downtown")
+        .field("complaint_type", "noise")
+        .expect(201);
+
+      expect(response.body).toHaveProperty("id");
+      expect(response.body).toHaveProperty("trackingTag");
+      expect(response.body.mediaUrl).toContain("/uploads/");
+      expect(response.body.mediaType).toBe("image");
+
+      // Cleanup
+      fs.unlinkSync(testImagePath);
+    });
+
+    it("should create a complaint without media", async () => {
+      const complaintData = {
+        submitterName: "Jane Smith",
+        contactNumber: "5551234567",
+        description: "Complaint without media",
+        location: "456 Oak Ave",
+        neighborhood: "Uptown",
+        complaint_type: "water",
+      };
+
+      const response = await request(app)
+        .post("/v1/complaints")
+        .send(complaintData)
+        .expect(201);
+
+      expect(response.body).toHaveProperty("id");
+      expect(response.body.mediaUrl).toBeNull();
+      expect(response.body.mediaType).toBeNull();
+    });
+
+    it("should reject invalid file type", async () => {
+      // Create a test file with invalid type
+      const testFilePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "test-complaint-file.txt",
+      );
+      fs.writeFileSync(testFilePath, "invalid content");
+
+      const response = await request(app)
+        .post("/v1/complaints")
+        .attach("media", testFilePath)
+        .field("submitterName", "John Doe")
+        .field("contactNumber", "9876543210")
+        .field("description", "Complaint with invalid file")
+        .field("location", "123 Main St")
+        .field("neighborhood", "Downtown")
+        .field("complaint_type", "noise")
+        .expect(400);
+
+      expect(response.body.error).toContain("Invalid file type");
+
+      // Cleanup
+      fs.unlinkSync(testFilePath);
+    });
+  });
+
+  describe("PATCH /complaints/:id with media", () => {
+    it("should update a complaint with new media", async () => {
+      // Create a small test image
+      const testImagePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "test-complaint-image2.png",
+      );
+      const buffer = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      );
+      fs.writeFileSync(testImagePath, buffer);
+
+      const response = await request(app)
+        .patch(`/v1/complaints/${testComplaintId}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .attach("media", testImagePath)
+        .field("notes", "Added media to this complaint")
+        .expect(200);
+
+      expect(response.body.notes).toBe("Added media to this complaint");
+      expect(response.body.mediaUrl).toContain("/uploads/");
+      expect(response.body.mediaType).toBe("image");
+
+      // Cleanup
+      fs.unlinkSync(testImagePath);
     });
   });
 });

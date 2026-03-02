@@ -1,6 +1,7 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import prisma from "../../../prisma";
 import crypto from "crypto";
+import { getMediaType, getMediaUrl, deleteMedia } from "../../../lib/upload";
 
 /**
  * Helper function to handle BigInt serialization for complaint objects.
@@ -81,7 +82,16 @@ export async function getComplaint(req: Request, res: Response) {
 }
 
 // UPDATED: Add trackingTag, priority, estimated time, and optional suggested solution on creation
-export async function createComplaint(req: Request, res: Response) {
+export async function createComplaint(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  // File upload is now handled by middleware in the route
+  await handleCreateComplaint(req, res);
+}
+
+async function handleCreateComplaint(req: Request, res: Response) {
   const {
     submitterName,
     contactNumber,
@@ -93,6 +103,18 @@ export async function createComplaint(req: Request, res: Response) {
   } = req.body;
 
   try {
+    // Handle uploaded file
+    let mediaUrl: string | undefined;
+    let mediaType: string | undefined;
+
+    if (req.file) {
+      mediaUrl = getMediaUrl(req.file.filename);
+      const type = getMediaType(req.file.mimetype);
+      if (type) {
+        mediaType = type;
+      }
+    }
+
     const trackingTag = crypto.randomUUID(); // Generate a unique tracking tag
     const newComplaint = await prisma.complaints.create({
       data: {
@@ -106,6 +128,8 @@ export async function createComplaint(req: Request, res: Response) {
         trackingTag,
         complaint_status: "pending", // Default status
         suggestedSolution, // NEW: Include the optional suggested solution
+        mediaUrl,
+        mediaType,
       },
     });
 
@@ -211,7 +235,16 @@ export async function refuseComplaint(req: Request, res: Response) {
 }
 
 // UPDATED: Simplified update function for non-status changes
-export async function updateComplaint(req: Request, res: Response) {
+export async function updateComplaint(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  // File upload is now handled by middleware in the route
+  await handleUpdateComplaint(req, res);
+}
+
+async function handleUpdateComplaint(req: Request, res: Response) {
   const { id } = req.params;
   const { priority, notes, estimatedReviewTime } = req.body;
 
@@ -224,6 +257,33 @@ export async function updateComplaint(req: Request, res: Response) {
       return res.status(404).json({ error: "Complaint not found" });
     }
 
+    // Handle new uploaded file
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mediaUrl: any = currentComplaint.mediaUrl;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mediaType: any = currentComplaint.mediaType;
+
+    if (req.file) {
+      // Delete old media file if exists
+      if (currentComplaint.mediaUrl) {
+        await deleteMedia(currentComplaint.mediaUrl);
+      }
+      mediaUrl = getMediaUrl(req.file.filename);
+      const type = getMediaType(req.file.mimetype);
+      if (type) {
+        mediaType = type;
+      }
+    }
+
+    // If mediaUrl is explicitly set to null or empty string in the request, remove the media
+    if (req.body.mediaUrl === null || req.body.mediaUrl === "") {
+      if (currentComplaint.mediaUrl) {
+        await deleteMedia(currentComplaint.mediaUrl);
+      }
+      mediaUrl = null;
+      mediaType = null;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {};
 
@@ -232,6 +292,8 @@ export async function updateComplaint(req: Request, res: Response) {
     if (notes) updateData.notes = notes;
     if (estimatedReviewTime)
       updateData.estimatedReviewTime = estimatedReviewTime;
+    if (mediaUrl !== undefined) updateData.mediaUrl = mediaUrl;
+    if (mediaType !== undefined) updateData.mediaType = mediaType;
 
     const updatedComplaint = await prisma.complaints.update({
       where: { id: BigInt(id) },
@@ -255,6 +317,11 @@ export async function deleteComplaint(req: Request, res: Response) {
     });
     if (!complaint) {
       return res.status(404).json({ error: "Complaint not found" });
+    }
+
+    // Delete associated media file if exists
+    if (complaint.mediaUrl) {
+      await deleteMedia(complaint.mediaUrl);
     }
 
     if (userRole === "manager") {

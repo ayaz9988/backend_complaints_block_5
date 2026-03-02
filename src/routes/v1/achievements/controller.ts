@@ -1,5 +1,6 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import prisma from "../../../prisma";
+import { getMediaType, getMediaUrl, deleteMedia } from "../../../lib/upload";
 
 // List all active achievements (public endpoint)
 export async function listAchievements(req: Request, res: Response) {
@@ -33,8 +34,17 @@ export async function getAchievement(req: Request, res: Response) {
   }
 }
 
-export async function createAchievement(req: Request, res: Response) {
-  const { title, description, iconUrl, status = "active" } = req.body;
+export async function createAchievement(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  // File upload is now handled by middleware in the route
+  await handleCreateAchievement(req, res);
+}
+
+async function handleCreateAchievement(req: Request, res: Response) {
+  const { title, description, status = "active" } = req.body;
   // FIX: Use 'sub' instead of 'id' to get the user ID from the JWT payload
   const createdBy = req.user?.sub;
 
@@ -51,11 +61,24 @@ export async function createAchievement(req: Request, res: Response) {
       return res.status(401).json({ error: "Authenticated user not found." });
     }
 
+    // Handle uploaded file
+    let mediaUrl: string | undefined;
+    let mediaType: string | undefined;
+
+    if (req.file) {
+      mediaUrl = getMediaUrl(req.file.filename);
+      const type = getMediaType(req.file.mimetype);
+      if (type) {
+        mediaType = type;
+      }
+    }
+
     const newAchievement = await prisma.achievement.create({
       data: {
         title,
         description,
-        iconUrl,
+        mediaUrl,
+        mediaType,
         status,
         createdBy,
       },
@@ -69,17 +92,63 @@ export async function createAchievement(req: Request, res: Response) {
 }
 
 // Update an existing achievement (manager/admin only)
-export async function updateAchievement(req: Request, res: Response) {
+export async function updateAchievement(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  // File upload is now handled by middleware in the route
+  await handleUpdateAchievement(req, res);
+}
+
+async function handleUpdateAchievement(req: Request, res: Response) {
   const { id } = req.params;
-  const { title, description, iconUrl, status } = req.body;
+  const { title, description, status } = req.body;
 
   try {
+    // Get existing achievement to check if there's an old media file
+    const existingAchievement = await prisma.achievement.findUnique({
+      where: { id },
+    });
+
+    if (!existingAchievement) {
+      return res.status(404).json({ error: "Achievement not found" });
+    }
+
+    // Handle new uploaded file
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mediaUrl: any = existingAchievement.mediaUrl;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mediaType: any = existingAchievement.mediaType;
+
+    if (req.file) {
+      // Delete old media file if exists
+      if (existingAchievement.mediaUrl) {
+        await deleteMedia(existingAchievement.mediaUrl);
+      }
+      mediaUrl = getMediaUrl(req.file.filename);
+      const type = getMediaType(req.file.mimetype);
+      if (type) {
+        mediaType = type;
+      }
+    }
+
+    // If mediaUrl is explicitly set to null or empty string in the request, remove the media
+    if (req.body.mediaUrl === null || req.body.mediaUrl === "") {
+      if (existingAchievement.mediaUrl) {
+        await deleteMedia(existingAchievement.mediaUrl);
+      }
+      mediaUrl = null;
+      mediaType = null;
+    }
+
     const updatedAchievement = await prisma.achievement.update({
       where: { id },
       data: {
         ...(title && { title }),
         ...(description && { description }),
-        ...(iconUrl && { iconUrl }),
+        ...(mediaUrl !== undefined && { mediaUrl }),
+        ...(mediaType !== undefined && { mediaType }),
         ...(status && { status }),
       },
     });
@@ -99,6 +168,15 @@ export async function deleteAchievement(req: Request, res: Response) {
   const { id } = req.params;
 
   try {
+    // Get existing achievement to delete associated media file
+    const existingAchievement = await prisma.achievement.findUnique({
+      where: { id },
+    });
+
+    if (existingAchievement?.mediaUrl) {
+      await deleteMedia(existingAchievement.mediaUrl);
+    }
+
     await prisma.achievement.delete({
       where: { id },
     });

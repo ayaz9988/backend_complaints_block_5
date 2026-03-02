@@ -105,6 +105,9 @@ model complaints {
   suggestedSolution String?    // Optional solution suggested by the submitter
   is_working_on     Boolean   @default(false)
   working_on_by     String?
+  // Media fields for image or video attachments
+  mediaUrl          String?    // Optional URL to media (image or video)
+  mediaType         String?    // Type of media: 'image' or 'video'
   // --- END NEW FIELDS ---
 
   complaint_status  Status    @default(pending)
@@ -166,7 +169,8 @@ model Achievement {
   id          String       @id @default(uuid())
   title       String
   description String
-  iconUrl     String?      // Optional URL to an icon or image
+  mediaUrl    String?      // Optional URL to media (image or video)
+  mediaType   String?      // Type of media: 'image' or 'video'
   status      ContentStatus @default(active) // Controls visibility
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -195,6 +199,8 @@ model Initiative {
   contactNumber String?       // Optional contact info
   location    String?         // Optional location
   neighborhood String?        // Optional neighborhood
+  mediaUrl    String?         // Optional URL to media (image or video)
+  mediaType   String?         // Type of media: 'image' or 'video'
 
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt

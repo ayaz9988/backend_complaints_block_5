@@ -22,13 +22,33 @@ import {
   refusalReasonSchemaForRefuse,
 } from "../../../validation";
 import { anonymousCombinedRateLimiter } from "../../../middleware/rateLimiter";
+import { uploadMediaOptional } from "../../../lib/upload";
 
 const complaints = express.Router();
 
+// Middleware to handle multer errors
+const handleMulterError = (
+  err: Error,
+  _req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  if (err.message.includes("Invalid file type")) {
+    return res.status(400).json({ error: "Invalid file type" });
+  }
+  if (err.message.includes("size exceeds")) {
+    return res.status(400).json({ error: err.message });
+  }
+  next(err);
+};
+
 // Anyone can create a complaint - Apply rate limiting for anonymous users
+// For multipart/form-data, run upload first then validate
 complaints.post(
   "/",
   anonymousCombinedRateLimiter,
+  uploadMediaOptional(),
+  handleMulterError,
   validateWithZod(createComplaintSchema),
   createComplaint,
 );
@@ -78,6 +98,8 @@ complaints.patch(
 complaints.patch(
   "/:id",
   requireRoles(["manager", "admin", "mukhtar"]),
+  uploadMediaOptional(),
+  handleMulterError,
   validateWithZod(updateComplaintSchema),
   updateComplaint,
 );

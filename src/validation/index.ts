@@ -321,7 +321,6 @@ export const createAchievementSchema = z.object({
   body: z.object({
     title: titleSchema,
     description: contentSchema,
-    iconUrl: urlSchema.optional(),
     status: contentStatusSchema.optional(),
   }),
 });
@@ -333,7 +332,6 @@ export const updateAchievementSchema = z.object({
   body: z.object({
     title: titleSchema.optional(),
     description: contentSchema.optional(),
-    iconUrl: urlSchema.optional(),
     status: contentStatusSchema.optional(),
   }),
 });
@@ -352,7 +350,7 @@ export const createInitiativeSchema = z.object({
 
 export const updateInitiativeSchema = z.object({
   params: z.object({
-    id: bigintSchema,
+    id: uuidSchema,
   }),
   body: z.object({
     title: titleSchema.optional(),

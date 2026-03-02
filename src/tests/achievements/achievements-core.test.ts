@@ -4,6 +4,8 @@ import { Express } from "express";
 import { createTestUser, loginUser } from "../helpers";
 import { createServer } from "../../server";
 import prisma from "../../prisma";
+import path from "path";
+import fs from "fs";
 
 const app = createServer();
 
@@ -57,7 +59,6 @@ describe("Achievements API", () => {
       data: {
         title: "Test Achievement",
         description: "This is a test achievement.",
-        iconUrl: "http://example.com/icon.png",
         status: "active",
         createdBy: adminUser.id, // Use the ID of the freshly created admin user
       },
@@ -71,7 +72,6 @@ describe("Achievements API", () => {
       const achievementData = {
         title: "New Admin Achievement",
         description: "This is a new achievement created by an admin.",
-        iconUrl: "http://example.com/new-icon.png",
       };
 
       const response = await request(app)
@@ -83,7 +83,6 @@ describe("Achievements API", () => {
       expect(response.body).toHaveProperty("id");
       expect(response.body.title).toBe(achievementData.title);
       expect(response.body.description).toBe(achievementData.description);
-      expect(response.body.iconUrl).toBe(achievementData.iconUrl);
       expect(response.body.status).toBe("active");
     });
 
@@ -297,6 +296,115 @@ describe("Achievements API", () => {
         .delete("/v1/achievements/00000000-0000-0000-0000-000000000000")
         .set("Authorization", `Bearer ${adminToken}`)
         .expect(404);
+    });
+  });
+
+  describe("POST /achievements with media", () => {
+    it("should create an achievement with an image", async () => {
+      // Create a small test image (1x1 transparent PNG)
+      const testImagePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "test-image.png",
+      );
+      const buffer = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      );
+      fs.writeFileSync(testImagePath, buffer);
+
+      const response = await request(app)
+        .post("/v1/achievements")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .attach("media", testImagePath)
+        .field("title", "Achievement With Image")
+        .field("description", "This achievement has an image")
+        .expect(201);
+
+      expect(response.body).toHaveProperty("id");
+      expect(response.body.title).toBe("Achievement With Image");
+      expect(response.body.mediaUrl).toContain("/uploads/");
+      expect(response.body.mediaType).toBe("image");
+
+      // Cleanup
+      fs.unlinkSync(testImagePath);
+    });
+
+    it("should create an achievement without media", async () => {
+      const achievementData = {
+        title: "Achievement Without Media",
+        description: "This achievement has no media",
+      };
+
+      const response = await request(app)
+        .post("/v1/achievements")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send(achievementData)
+        .expect(201);
+
+      expect(response.body).toHaveProperty("id");
+      expect(response.body.title).toBe("Achievement Without Media");
+      expect(response.body.mediaUrl).toBeNull();
+      expect(response.body.mediaType).toBeNull();
+    });
+
+    it("should reject invalid file type", async () => {
+      // Create a test file with invalid type
+      const testFilePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "test-file.txt",
+      );
+      fs.writeFileSync(testFilePath, "invalid content");
+
+      const response = await request(app)
+        .post("/v1/achievements")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .attach("media", testFilePath)
+        .field("title", "Invalid File Type")
+        .field("description", "This should fail")
+        .expect(400);
+
+      expect(response.body.error).toContain("Invalid file type");
+
+      // Cleanup
+      fs.unlinkSync(testFilePath);
+    });
+  });
+
+  describe("PATCH /achievements/:id with media", () => {
+    it("should update an achievement with new media", async () => {
+      // Create a small test image
+      const testImagePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "test-image2.png",
+      );
+      const buffer = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      );
+      fs.writeFileSync(testImagePath, buffer);
+
+      const response = await request(app)
+        .patch(`/v1/achievements/${testAchievementId}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .attach("media", testImagePath)
+        .field("title", "Updated With Media")
+        .expect(200);
+
+      expect(response.body.title).toBe("Updated With Media");
+      expect(response.body.mediaUrl).toContain("/uploads/");
+      expect(response.body.mediaType).toBe("image");
+
+      // Cleanup
+      fs.unlinkSync(testImagePath);
     });
   });
 });

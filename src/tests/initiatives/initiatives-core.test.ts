@@ -4,6 +4,8 @@ import { Express } from "express";
 import { createTestUser, loginUser, UserRole } from "../helpers";
 import { createServer } from "../../server";
 import prisma from "../../prisma";
+import path from "path";
+import fs from "fs";
 
 const app = createServer();
 
@@ -261,7 +263,7 @@ describe("Initiatives API", () => {
       };
 
       await request(app)
-        .patch("/v1/initiatives/999999")
+        .patch("/v1/initiatives/00000000-0000-0000-0000-000000000000")
         .set("Authorization", `Bearer ${adminToken}`)
         .send(updateData)
         .expect(404);
@@ -339,6 +341,112 @@ describe("Initiatives API", () => {
       await request(app)
         .delete(`/v1/initiatives/${testInitiativeId}`)
         .expect(401);
+    });
+  });
+
+  describe("POST /initiatives with media", () => {
+    it("should create an initiative with an image", async () => {
+      // Create a small test image (1x1 transparent PNG)
+      const testImagePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "test-initiative-image.png",
+      );
+      const buffer = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      );
+      fs.writeFileSync(testImagePath, buffer);
+
+      const response = await request(app)
+        .post("/v1/initiatives")
+        .attach("media", testImagePath)
+        .field("title", "Initiative With Image")
+        .field("description", "This initiative has an image")
+        .expect(201);
+
+      expect(response.body).toHaveProperty("id");
+      expect(response.body.title).toBe("Initiative With Image");
+      expect(response.body.mediaUrl).toContain("/uploads/");
+      expect(response.body.mediaType).toBe("image");
+
+      // Cleanup
+      fs.unlinkSync(testImagePath);
+    });
+
+    it("should create an initiative without media", async () => {
+      const initiativeData = {
+        title: "Initiative Without Media",
+        description: "This initiative has no media",
+      };
+
+      const response = await request(app)
+        .post("/v1/initiatives")
+        .send(initiativeData)
+        .expect(201);
+
+      expect(response.body).toHaveProperty("id");
+      expect(response.body.title).toBe("Initiative Without Media");
+      expect(response.body.mediaUrl).toBeNull();
+      expect(response.body.mediaType).toBeNull();
+    });
+
+    it("should reject invalid file type", async () => {
+      // Create a test file with invalid type
+      const testFilePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "test-initiatives-file.txt",
+      );
+      fs.writeFileSync(testFilePath, "invalid content");
+
+      const response = await request(app)
+        .post("/v1/initiatives")
+        .attach("media", testFilePath)
+        .field("title", "Invalid File Type")
+        .field("description", "This should fail")
+        .expect(400);
+
+      expect(response.body.error).toContain("Invalid file type");
+
+      // Cleanup
+      fs.unlinkSync(testFilePath);
+    });
+  });
+
+  describe("PATCH /initiatives/:id with media", () => {
+    it("should update an initiative with new media", async () => {
+      // Create a small test image
+      const testImagePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "test-initiative-image2.png",
+      );
+      const buffer = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      );
+      fs.writeFileSync(testImagePath, buffer);
+
+      const response = await request(app)
+        .patch(`/v1/initiatives/${testInitiativeId}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .attach("media", testImagePath)
+        .field("title", "Updated Initiative With Media")
+        .expect(200);
+
+      expect(response.body.title).toBe("Updated Initiative With Media");
+      expect(response.body.mediaUrl).toContain("/uploads/");
+      expect(response.body.mediaType).toBe("image");
+
+      // Cleanup
+      fs.unlinkSync(testImagePath);
     });
   });
 });
