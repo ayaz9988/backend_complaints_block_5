@@ -88,6 +88,8 @@ jobs:
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/complaints_test"
           NODE_ENV: "test"
+          JWT_ACCESS_SECRET: "ci-jwt-access-secret"
+          JWT_REFRESH_SECRET: "ci-jwt-refresh-secret"
 
   build:
     name: Build
