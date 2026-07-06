@@ -1,12 +1,17 @@
+import http from "http";
 import config from "./config";
 import { createServer } from "./server";
 import prisma from "./prisma";
 import logger from "./lib/logger";
 
-const server = createServer();
+const app = createServer();
+const server = http.createServer(app);
 
 const gracefulShutdown = async (signal: string) => {
-  logger.info({ signal }, "Shutdown signal received. Shutting down gracefully...");
+  logger.info(
+    { signal },
+    "Shutdown signal received. Shutting down gracefully...",
+  );
   server.close(async () => {
     logger.info("HTTP server closed.");
     await prisma.$disconnect();

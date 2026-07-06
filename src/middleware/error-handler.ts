@@ -16,7 +16,10 @@ export default function errorHandler(
   }
 
   if (error instanceof CustomError) {
-    logger.warn({ err: error, path: req.path, method: req.method }, error.message);
+    logger.warn(
+      { err: error, path: req.path, method: req.method },
+      error.message,
+    );
     res.status(error.statusCode).json({
       error: {
         message: error.message,
@@ -26,7 +29,10 @@ export default function errorHandler(
     return;
   }
 
-  logger.error({ err: error, path: req.path, method: req.method }, "Unhandled error");
+  logger.error(
+    { err: error, path: req.path, method: req.method },
+    "Unhandled error",
+  );
   res.status(500).json({
     error: {
       message: config.debug

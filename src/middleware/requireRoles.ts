@@ -17,7 +17,10 @@ export default function requireRoles(allowedRoles: string[]) {
       const token = header?.split(" ")[1];
       if (!token) return res.status(401).json({ error: "Missing token" });
 
-      const payload = verifyToken<AuthenticatedJwtPayload>(token, config.ACCESS_SECRET as string);
+      const payload = verifyToken<AuthenticatedJwtPayload>(
+        token,
+        config.ACCESS_SECRET as string,
+      );
 
       if (!allowedRoles.includes(payload.role))
         return res.status(403).json({ error: "Forbidden" });

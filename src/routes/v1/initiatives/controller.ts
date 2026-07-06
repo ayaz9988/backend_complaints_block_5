@@ -87,7 +87,7 @@ export async function listInitiatives(req: Request, res: Response) {
 }
 
 export async function getInitiative(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   try {
     const initiative = await prisma.initiative.findUnique({
       where: { id: id },
@@ -115,7 +115,7 @@ export async function updateInitiative(
 }
 
 async function handleUpdateInitiative(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const {
     title,
     description,
@@ -196,7 +196,7 @@ async function handleUpdateInitiative(req: Request, res: Response) {
 }
 
 export async function deleteInitiative(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   try {
     const initiative = await prisma.initiative.findUnique({
@@ -223,7 +223,7 @@ export async function deleteInitiative(req: Request, res: Response) {
 }
 
 export async function approveInitiative(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   try {
     const initiative = await prisma.initiative.findUnique({
@@ -254,7 +254,7 @@ export async function approveInitiative(req: Request, res: Response) {
 }
 
 export async function rejectInitiative(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { rejectionReason } = req.body;
 
   if (!rejectionReason) {

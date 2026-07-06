@@ -67,7 +67,7 @@ export async function listComplaints(req: Request, res: Response) {
 }
 
 export async function getComplaint(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   try {
     const complaint = await prisma.complaints.findFirst({
       where: { id: BigInt(id), deletedAt: null },
@@ -148,7 +148,7 @@ async function handleCreateComplaint(req: Request, res: Response) {
 
 // NEW: Accept a complaint with solution info
 export async function acceptComplaint(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { solutionInfo } = req.body;
 
   if (!solutionInfo || solutionInfo.trim() === "") {
@@ -192,7 +192,7 @@ export async function acceptComplaint(req: Request, res: Response) {
 
 // NEW: Refuse a complaint with refusal reason
 export async function refuseComplaint(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { refusalReason } = req.body;
 
   if (!refusalReason || refusalReason.trim() === "") {
@@ -245,7 +245,7 @@ export async function updateComplaint(
 }
 
 async function handleUpdateComplaint(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { priority, notes, estimatedReviewTime } = req.body;
 
   try {
@@ -308,7 +308,7 @@ async function handleUpdateComplaint(req: Request, res: Response) {
 
 // No changes needed here, logic remains the same
 export async function deleteComplaint(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userRole = req.user?.role;
 
   try {
@@ -343,7 +343,7 @@ export async function deleteComplaint(req: Request, res: Response) {
 
 // No changes needed here, logic remains the same
 export async function trackComplaint(req: Request, res: Response) {
-  const { trackingTag } = req.params;
+  const trackingTag = req.params.trackingTag as string;
 
   if (!trackingTag) {
     return res.status(400).json({ error: "Tracking tag is required" });
@@ -373,7 +373,7 @@ export async function trackComplaint(req: Request, res: Response) {
 }
 
 export async function toggleWorkingOn(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userId = req.user?.sub;
 
   try {
@@ -422,7 +422,7 @@ export async function toggleWorkingOn(req: Request, res: Response) {
 }
 
 export async function setComplaintPriority(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { priority } = req.body;
 
   if (!priority || !["high", "mid", "low"].includes(priority)) {

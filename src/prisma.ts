@@ -10,17 +10,19 @@ import config from "./config";
 
 const connectionString = `${process.env.DATABASE_URL}`;
 
-const adapter = new PrismaPg({
+const poolConfig = {
   connectionString,
-  pool: {
-    min: config.dbPoolMin,
-    max: config.dbPoolMax,
-  },
-});
+  min: config.dbPoolMin,
+  max: config.dbPoolMax,
+};
+const adapter = new PrismaPg(poolConfig);
 
 const prisma = new PrismaClient({
   adapter,
-  log: config.env === "development" ? ["query", "warn", "error"] : ["warn", "error"],
+  log:
+    config.env === "development"
+      ? ["query", "warn", "error"]
+      : ["warn", "error"],
 });
 
 export default prisma;

@@ -19,7 +19,7 @@ export async function listAchievements(req: Request, res: Response) {
 
 // Get a single active achievement by ID (public endpoint)
 export async function getAchievement(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   try {
     const achievement = await prisma.achievement.findFirst({
       where: { id, status: "active" }, // Ensure it's active before showing
@@ -103,7 +103,7 @@ export async function updateAchievement(
 }
 
 async function handleUpdateAchievement(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { title, description, status } = req.body;
 
   try {
@@ -166,7 +166,7 @@ async function handleUpdateAchievement(req: Request, res: Response) {
 
 // Delete an achievement (manager/admin only)
 export async function deleteAchievement(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   try {
     // Get existing achievement to delete associated media file

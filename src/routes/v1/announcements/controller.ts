@@ -18,7 +18,7 @@ export async function listAnnouncements(req: Request, res: Response) {
 
 // Get a single active announcement by ID (public endpoint)
 export async function getAnnouncement(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   try {
     const announcement = await prisma.announcement.findFirst({
       where: { id, status: "active" }, // Ensure it's active before showing
@@ -72,7 +72,7 @@ export async function createAnnouncement(req: Request, res: Response) {
 
 // Update an existing announcement (manager/admin only)
 export async function updateAnnouncement(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { title, content, status } = req.body;
 
   try {
@@ -98,7 +98,7 @@ export async function updateAnnouncement(req: Request, res: Response) {
 
 // Delete an announcement (manager/admin only)
 export async function deleteAnnouncement(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   try {
     await prisma.announcement.delete({

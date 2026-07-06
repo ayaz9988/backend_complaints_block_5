@@ -4,7 +4,8 @@ node_modules
 
 /generated/prisma
 
-# Uploaded media files
-uploads
-
 CHANGES.md
+
+# Uploaded media files
+/dist
+/uploads

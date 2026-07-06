@@ -63,7 +63,7 @@ export async function getUsersByRole(req: Request, res: Response) {
 
 // Get user by ID (for managers and admins)
 export async function getUserById(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userRole = req.user?.role;
 
   try {
@@ -96,7 +96,7 @@ export async function getUserById(req: Request, res: Response) {
 
 // Get complaints handled by a specific user
 export async function getUserComplaints(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userRole = req.user?.role;
 
   try {
@@ -144,7 +144,7 @@ export async function getUserComplaints(req: Request, res: Response) {
 
 // Update user info (for managers and admins)
 export async function updateUser(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { name, email, password, neighborhood } = req.body;
   const userRole = req.user?.role;
 
@@ -203,7 +203,7 @@ export async function updateUser(req: Request, res: Response) {
 
 // Deactivate user (for managers and admins)
 export async function deactivateUser(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userRole = req.user?.role;
 
   try {
@@ -243,7 +243,7 @@ export async function deactivateUser(req: Request, res: Response) {
 
 // Delete user (for managers only)
 export async function deleteUser(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userRole = req.user?.role;
 
   try {
