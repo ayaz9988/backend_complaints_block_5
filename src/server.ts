@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
+import zlib from "zlib";
 import pinoHttp from "pino-http";
 import config from "./config";
 import v1 from "./routes/v1";
@@ -22,6 +24,15 @@ export const createServer = () => {
   app
     .disable("x-powered-by")
     .use(helmet())
+    .use(compression({
+      level: zlib.constants.Z_BEST_SPEED,
+      threshold: 512,
+      memLevel: 8,
+      filter: (req, res) => {
+        if (req.headers["x-no-compression"]) return false;
+        return compression.filter(req, res);
+      },
+    }))
     .use(pinoHttp({ logger }))
     .use(express.urlencoded({ extended: true }))
     .use(express.json())
