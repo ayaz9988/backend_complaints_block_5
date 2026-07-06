@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../prisma";
+import logger from "../../../lib/logger";
 import { getMediaType, getMediaUrl, deleteMedia } from "../../../lib/upload";
 
 // List all active achievements (public endpoint)
@@ -86,7 +87,7 @@ async function handleCreateAchievement(req: Request, res: Response) {
 
     res.status(201).json(newAchievement);
   } catch (error) {
-    console.error("Error creating announcement:", error);
+    logger.error({ err: error }, "Error creating achievement");
     res.status(500).json({ error: "Failed to create achievement" });
   }
 }

@@ -23,7 +23,7 @@ auth.post(
 );
 
 // Login - Apply rate limiting for anonymous users
-auth.post("/login", validateWithZod(loginSchema), login);
+auth.post("/login", anonymousCombinedRateLimiter, validateWithZod(loginSchema), login);
 
 // Refresh
 auth.post("/refresh", validateWithZod(refreshTokenSchema), refresh);

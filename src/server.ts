@@ -1,18 +1,19 @@
 import express, { Request, Response } from "express";
-import morgan from "morgan";
 import cors from "cors";
+import helmet from "helmet";
+import pinoHttp from "pino-http";
 import config from "./config";
 import v1 from "./routes/v1";
 import errorHandler from "./middleware/error-handler";
 import cookieParser from "cookie-parser";
 import path from "path";
+import logger from "./lib/logger";
 
 export const createServer = () => {
   const FRONTEND_ORIGIN =
     process.env.FRONTEND_ORIGIN || "http://localhost:3000";
   const app = express();
 
-  // Serve uploaded files statically
   app.use(
     "/uploads",
     express.static(path.join(process.cwd(), config.uploadDir)),
@@ -20,14 +21,14 @@ export const createServer = () => {
 
   app
     .disable("x-powered-by")
-    .use(morgan("dev"))
+    .use(helmet())
+    .use(pinoHttp({ logger }))
     .use(express.urlencoded({ extended: true }))
     .use(express.json())
-    // .use(cors())
     .use(cors({ origin: FRONTEND_ORIGIN, credentials: true }))
     .use(cookieParser());
 
-  app.get("/health", (req: Request, res: Response) => {
+  app.get("/health", (_req: Request, res: Response) => {
     res.json({ ok: true, environment: config.env });
   });
 

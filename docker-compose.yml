@@ -1,5 +1,4 @@
 services:
-  # The PostgreSQL Database Service
   db:
     image: postgres:17-alpine
     container_name: complaints_db
@@ -9,18 +8,18 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: complaints_db
     ports:
-      # Map host port 5432 to container port 5432
+      # Exposed so you can connect with local tools (e.g. DBeaver, psql).
+      # Remove or change the host port if you already run Postgres locally.
       - "5432:5432"
     volumes:
-      # Persist database data
       - postgres_data:/var/lib/postgresql/data/
     healthcheck:
+      # pg_isready returns 0 when Postgres is accepting connections.
       test: ["CMD-SHELL", "pg_isready -U postgres -d complaints_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # The Node.js Application Service
   app:
     build:
       context: .
@@ -30,15 +29,25 @@ services:
     env_file:
       - ./.env
     ports:
-      # Map the port from your .env file (e.g., 5000) to the container's port 5000
       - "${PORT:-5000}:5000"
     environment:
-      # Override the DATABASE_URL to point to the docker service 'db'
+      # Override DATABASE_URL so Prisma connects to the db service
+      # over the internal Docker network instead of localhost.
       DATABASE_URL: "postgresql://postgres:postgres@db:5432/complaints_db"
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "npx prisma migrate deploy && npm start"
+    healthcheck:
+      # Note: this overrides the HEALTHCHECK from the Dockerfile.
+      # Kept here for visibility so all service healthchecks are in one place.
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000', r => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    # Run migrations before starting the app.
+    # prisma migrate deploy is idempotent — it only applies pending migrations.
+    command: sh -c "npx prisma migrate deploy && node dist/index.js"
 
 volumes:
   postgres_data:

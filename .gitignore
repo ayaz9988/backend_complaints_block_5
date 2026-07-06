@@ -6,3 +6,5 @@ node_modules
 
 # Uploaded media files
 uploads
+
+CHANGES.md

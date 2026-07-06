@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../../../prisma";
 import bcrypt from "bcryptjs";
+import logger from "../../../lib/logger";
 
 // Helper function to handle BigInt serialization for user objects
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,7 +56,7 @@ export async function getUsersByRole(req: Request, res: Response) {
 
     return res.json(users.map(serializeUser));
   } catch (error) {
-    console.error("Error in getUsersByRole:", error);
+    logger.error({ err: error }, "Error in getUsersByRole");
     res.status(500).json({ error: "Failed to fetch users" });
   }
 }
@@ -88,7 +89,7 @@ export async function getUserById(req: Request, res: Response) {
       return res.status(403).json({ error: "Forbidden" });
     }
   } catch (error) {
-    console.error("Error in getUserById:", error);
+    logger.error({ err: error }, "Error in getUserById");
     res.status(500).json({ error: "Failed to fetch user" });
   }
 }
@@ -136,7 +137,7 @@ export async function getUserComplaints(req: Request, res: Response) {
       return res.status(403).json({ error: "Forbidden" });
     }
   } catch (error) {
-    console.error("Error in getUserComplaints:", error);
+    logger.error({ err: error }, "Error in getUserComplaints");
     res.status(500).json({ error: "Failed to fetch user complaints" });
   }
 }
@@ -195,7 +196,7 @@ export async function updateUser(req: Request, res: Response) {
       return res.status(403).json({ error: "Forbidden" });
     }
   } catch (error) {
-    console.error("Error in updateUser:", error);
+    logger.error({ err: error }, "Error in updateUser");
     res.status(500).json({ error: "Failed to update user" });
   }
 }
@@ -235,7 +236,7 @@ export async function deactivateUser(req: Request, res: Response) {
       return res.status(403).json({ error: "Forbidden" });
     }
   } catch (error) {
-    console.error("Error in deactivateUser:", error);
+    logger.error({ err: error }, "Error in deactivateUser");
     res.status(500).json({ error: "Failed to deactivate user" });
   }
 }
@@ -291,7 +292,7 @@ export async function deleteUser(req: Request, res: Response) {
       return res.status(403).json({ error: "Forbidden" });
     }
   } catch (error) {
-    console.error("Error in deleteUser:", error);
+    logger.error({ err: error }, "Error in deleteUser");
     res.status(500).json({ error: "Failed to delete user" });
   }
 }

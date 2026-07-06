@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../../prisma";
+import logger from "../../../lib/logger";
 
 // List all active announcements (public endpoint)
 export async function listAnnouncements(req: Request, res: Response) {
@@ -64,7 +65,7 @@ export async function createAnnouncement(req: Request, res: Response) {
 
     res.status(201).json(newAnnouncement);
   } catch (error) {
-    console.error("Error creating announcement:", error);
+    logger.error({ err: error }, "Error creating announcement");
     res.status(500).json({ error: "Failed to create announcement" });
   }
 }

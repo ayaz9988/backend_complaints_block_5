@@ -6,10 +6,21 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import config from "./config";
 
 const connectionString = `${process.env.DATABASE_URL}`;
 
-const adapter = new PrismaPg({ connectionString });
-const prisma = new PrismaClient({ adapter });
+const adapter = new PrismaPg({
+  connectionString,
+  pool: {
+    min: config.dbPoolMin,
+    max: config.dbPoolMax,
+  },
+});
+
+const prisma = new PrismaClient({
+  adapter,
+  log: config.env === "development" ? ["query", "warn", "error"] : ["warn", "error"],
+});
 
 export default prisma;

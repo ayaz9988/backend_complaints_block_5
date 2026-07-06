@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Request, Response, NextFunction } from "express";
 import { Priority } from "@prisma/client";
+import { sanitize } from "../lib/sanitize";
 
 // Common validation schemas
 export const emailSchema = z
@@ -18,7 +19,7 @@ export const nameSchema = z
   .string()
   .min(2, "Name must be at least 2 characters")
   .max(100, "Name must be no more than 100 characters")
-  .transform((name: string) => name.trim());
+  .transform((name: string) => sanitize(name));
 
 export const roleSchema = z.enum(["manager", "admin", "mukhtar"], {
   errorMap: () => ({
@@ -80,7 +81,7 @@ export const neighborhoodSchema = z
   .string()
   .min(2, "Neighborhood name must be at least 2 characters")
   .max(100, "Neighborhood name must be no more than 100 characters")
-  .transform((neighborhood: string) => neighborhood.trim());
+  .transform((neighborhood: string) => sanitize(neighborhood));
 
 export const complaintTypeSchema = z
   .string()
@@ -97,37 +98,37 @@ export const solutionInfoSchema = z
   .string()
   .min(10, "Solution info must be at least 10 characters")
   .max(1000, "Solution info must be no more than 1000 characters")
-  .transform((info: string) => info.trim());
+  .transform((info: string) => sanitize(info));
 
 export const refusalReasonSchema = z
   .string()
   .min(10, "Refusal reason must be at least 10 characters")
   .max(1000, "Refusal reason must be no more than 1000 characters")
-  .transform((reason: string) => reason.trim());
+  .transform((reason: string) => sanitize(reason));
 
 export const locationSchema = z
   .string()
   .min(2, "Location must be at least 2 characters")
   .max(200, "Location must be no more than 200 characters")
-  .transform((location: string) => location.trim());
+  .transform((location: string) => sanitize(location));
 
 export const descriptionSchema = z
   .string()
   .min(10, "Description must be at least 10 characters")
   .max(2000, "Description must be no more than 2000 characters")
-  .transform((description: string) => description.trim());
+  .transform((description: string) => sanitize(description));
 
 export const titleSchema = z
   .string()
   .min(2, "Title must be at least 2 characters")
   .max(200, "Title must be no more than 200 characters")
-  .transform((title: string) => title.trim());
+  .transform((title: string) => sanitize(title));
 
 export const contentSchema = z
   .string()
   .min(10, "Content must be at least 10 characters")
   .max(5000, "Content must be no more than 5000 characters")
-  .transform((content: string) => content.trim());
+  .transform((content: string) => sanitize(content));
 
 export const urlSchema = z
   .string()
@@ -171,7 +172,7 @@ export const loginSchema = z.object({
 
 export const refreshTokenSchema = z.object({
   cookies: z.object({
-    refreshToken: z.string().min(1, "Refresh token is required"),
+    refresh_token: z.string().min(1, "Refresh token is required"),
   }),
 });
 

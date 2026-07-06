@@ -21,24 +21,6 @@ export function makeExpiryDate(days: number) {
   return add(new Date(), { days });
 }
 
-// export async function createRefreshToken(
-//   userId: string,
-//   token: string,
-//   expiresAt: Date,
-// ) {
-//   const decoded = jwt.decode(token) as { jti: string };
-//   const tokenHash = await hashRefreshToken(token);
-//   return prisma.refreshToken.create({
-//     data: {
-//       userId,
-//       token: tokenHash,
-//       expiresAt,
-//       revoked: false,
-//       jti: decoded.jti,
-//     },
-//   });
-// }
-
 export async function createRefreshToken(
   userId: string,
   token: string,

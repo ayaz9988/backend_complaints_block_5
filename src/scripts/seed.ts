@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
+import logger from "../lib/logger";
 import prisma from "../prisma";
 import { hashPassword } from "../services/auth";
 
@@ -30,7 +31,7 @@ async function main() {
           is_active: isActive,
         },
       });
-      console.log(`Manager user updated: ${email}`);
+      logger.info({ email }, "Manager user updated");
     } else {
       // Create new user
       await prisma.user.create({
@@ -42,12 +43,12 @@ async function main() {
           is_active: isActive,
         },
       });
-      console.log(`Manager user created: ${email}`);
+      logger.info({ email }, "Manager user created");
     }
 
-    console.log("Super user (manager) seeded successfully!");
+    logger.info("Super user (manager) seeded successfully!");
   } catch (error) {
-    console.error("Error seeding manager user:", error);
+    logger.error({ err: error }, "Error seeding manager user");
     process.exit(1);
   } finally {
     await prisma.$disconnect();
