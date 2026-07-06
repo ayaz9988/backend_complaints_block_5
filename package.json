@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.23.0",
   "scripts": {
     "dev": "dotenv -- nodemon",
+    "prebuild": "prisma generate",
     "build": "tsc -p tsconfig.json",
     "test": "dotenv -- jest --runInBand",
     "test:watch": "jest --watch",

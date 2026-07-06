@@ -8,6 +8,7 @@ on:
 
 env:
   NODE_VERSION: "24"
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
 
 jobs:
   lint:
@@ -25,6 +26,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: npx prisma generate
+
       - run: pnpm lint
 
   typecheck:
@@ -41,6 +44,8 @@ jobs:
           cache: "pnpm"
 
       - run: pnpm install --frozen-lockfile
+
+      - run: npx prisma generate
 
       - run: pnpm exec tsc --noEmit
 
@@ -98,5 +103,7 @@ jobs:
           cache: "pnpm"
 
       - run: pnpm install --frozen-lockfile
+
+      - run: npx prisma generate
 
       - run: pnpm run build
