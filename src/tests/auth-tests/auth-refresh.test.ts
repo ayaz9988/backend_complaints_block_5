@@ -85,9 +85,10 @@ describe("POST /v1/auth/refresh", () => {
       .post("/v1/auth/refresh")
       .set("Cookie", "refresh_token=invalid_fake_token_12345");
 
-    // The validation middleware runs first, so we get 400 for invalid token format
-    expect(response.status).toBe(400);
-    expect(response.body.error).toHaveProperty("message", "Validation failed");
+    // The validation middleware only checks cookie presence, not JWT format.
+    // The controller's JWT verification then fails and returns 401.
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("error", "Invalid token");
   });
 
   /**
